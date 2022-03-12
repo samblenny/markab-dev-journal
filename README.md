@@ -13,13 +13,8 @@ HTML journal entry index is at: https://samblenny.github.io/markab-dev-journal/
 For now it just links to the journal entries as plaintext markdown files, with
 names according to the date I wrote them.
 
-Currently I'm writing a separate markdown file for each day of the journal and
-dumping them all in the root directory of this repo. Probably that will get too
-messy and I will need to reorganize into folders or something. Whatever... I'll
-cross that bridge when I come to it.
-
-For now, the index is hand-coded and just has a reverse chronological list of
-journal entries with links to the markdown files as plain text. All this may
+For now, the html index is hand-coded and just has a reverse chronological list
+of journal entries with links to the markdown files as plain text. All this may
 change suddenly if I decide I need to reorganize it. There's a moderate chance
 that I might rig up a thing to render the markdown to html files. No promises.
 This is a new workflow for me. Lots of improvising going on here.
