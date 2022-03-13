@@ -27,5 +27,6 @@ Copyright (c) 2022 Sam Blenny
 This work is licensed under a Creative Commons
 Attribution-NonCommercial-ShareAlike 4.0 International License.
 
-See [LICENSE](LICENSE) in this repo for a plaintext copy of the license or
-https://creativecommons.org/licenses/by-nc-sa/4.0/ for the online html version.
+See [LICENSE.txt](LICENSE.txt) in this repo for a plaintext copy of the license
+or https://creativecommons.org/licenses/by-nc-sa/4.0/ for the online html
+version.
