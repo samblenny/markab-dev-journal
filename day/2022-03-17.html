@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-NC-SA-4.0
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Dev Journal documenting work on Markab">
 <title>2022-03-17: Pandoc .md to .html, Forth books</title>
-<link rel="preload" href="/style.css" as="style">
-<link href="/style.css" rel="stylesheet"></head><body>
-<header><a href="/">Markab Dev Journal</a></header>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
 <main>
 <h1>2022-03-17: Pandoc .md to .html, Forth books</h1>
 <hr><ul>
@@ -74,9 +74,9 @@ using a template file.</p>
 &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
 &lt;meta name=&quot;description&quot; content=&quot;Dev Journal documenting work on Markab&quot;&gt;
 &lt;title&gt;$title$&lt;/title&gt;
-&lt;link rel=&quot;preload&quot; href=&quot;/style.css&quot; as=&quot;style&quot;&gt;
-&lt;link href=&quot;/style.css&quot; rel=&quot;stylesheet&quot;&gt;&lt;/head&gt;&lt;body&gt;
-&lt;header&gt;&lt;a href=&quot;/&quot;&gt;Markab Dev Journal&lt;/a&gt;&lt;/header&gt;
+&lt;link rel=&quot;preload&quot; href=&quot;../style.css&quot; as=&quot;style&quot;&gt;
+&lt;link href=&quot;../style.css&quot; rel=&quot;stylesheet&quot;&gt;&lt;/head&gt;&lt;body&gt;
+&lt;header&gt;&lt;a href=&quot;../&quot;&gt;Markab Dev Journal&lt;/a&gt;&lt;/header&gt;
 &lt;main&gt;
 &lt;h1&gt;$title$&lt;/h1&gt;
 $if(toc)$&lt;hr&gt;$toc$&lt;hr&gt;
@@ -118,7 +118,8 @@ are associated with <code>.SUFFIXES</code>.</p>
 <pre><code>make</code></pre>
 <p>To rebuild the whole set of journal entries when I want to change the template,
 I use <code>make clean</code> first and add a <code>-j</code> to do a parallel build:</p>
-<pre><code>make clean; make -j</code></pre>
+<pre><code>make clean
+make -j</code></pre>
 <p>For now, starting a new entry is manual, and updating the index is manual. I
 would like to add a make target to automatically generate a journal entry
 file. Same for automatically generating the index file.</p>
