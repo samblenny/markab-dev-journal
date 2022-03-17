@@ -100,7 +100,7 @@ MD_FILES   = $(wildcard 20??-??-??*.md)
 HTML_FILES = $(MD_FILES:.md=.html)
 PD_TEMPLATE = pandoc_template.html
 PD_FMT = -f markdown+lists_without_preceding_blankline+autolink_bare_uris
-PD_OPT = --wrap=preserve --strip-comments
+PD_OPT = --wrap=preserve --strip-comments -s --toc
 
 all: $(HTML_FILES)
     @echo done
