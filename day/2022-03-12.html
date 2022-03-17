@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-12: Rework dev journal</title>
+<link rel="preload" href="/style.css" as="style">
+<link href="/style.css" rel="stylesheet"></head><body>
+<header><a href="/">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-12: Rework dev journal</h1>
+<p>This journal started as a single markdown file alongside of my code, but, at
+the rate I’m adding notes, that file would quickly become unmanageably long.
+So, gonna try making one file per day along with an html index so they are all
+easy to view as plain text. Also decided on CC-BY-NC-SA-4.0 as my license for
+this writing rather than the MIT license that I’m using for the code.</p>
+<p>For the html index file’s css colors, I changed my old method of using
+RGB hex constants for colors. Now there is a color theme rule at the top of the
+styles that defines color theme variables, and the other rules use <code>var()</code> to
+reference colors from the theme.</p>
+<p>Used Lighthouse in Chrome DevTools to check on color contrast ratios. It wasn’t
+happy with the footer. Had trouble finding the color contrast checker that
+the documentation said was supposed to show up in the DevTools color picker.</p>
+<p>Seems the low contrast warning thing only shows up for the <code>color</code> property,
+and not for <code>background-color</code>. Awkward because I ws trying to adjust the
+background to be darker.</p>
+<p>Had some trouble with my markdown file links triggering a download instead of
+just loading into a text file viewer. Fixing my ruby webserver script to
+use “text/markdown” as the content type for .md files seems to make it work.</p>
+<p>Verified the content type by using netcat to do a manual HTTP request:</p>
+<pre><code>$ nc localhost 8000
+GET http://localhost:8000/2022-03-08.md HTTP/1.1
+
+HTTP/1.1 200 OK 
+...
+Content-Type: text/markdown
+...</code></pre>
+<p>Before my fix to the script, it was using “application/octet-stream”</p>
+<p>Links:</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties" class="uri">https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#color_keywords" class="uri">https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#color_keywords</a></li>
+<li><a href="https://web.dev/color-contrast/" class="uri">https://web.dev/color-contrast/</a></li>
+</ul>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="/LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-14: Thinking about CRT bezels &amp; game carts</title>
+<link rel="preload" href="/style.css" as="style">
+<link href="/style.css" rel="stylesheet"></head><body>
+<header><a href="/">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-14: Thinking about CRT bezels &amp; game carts</h1>
+<hr><ul>
+<li><a href="#todays-visual-research">Today’s Visual Research</a></li>
+<li><a href="#background-motivation">Background &amp; Motivation</a></li>
+<li><a href="#conclusion-png-files-and-skeuomorphic-game-cart-slots">Conclusion: PNG files and skeuomorphic game cart slots?</a></li>
+</ul><hr>
+<p>Been thinking a lot today about skeuomorphism, CRT bezels, and game cartridges.
+Right now, Markab’s wasm demo page has a small-ish “screen” area in the middle
+of a big solid-color background.</p>
+<p>For the reasons that I wrote about yesterday, I’m thinking it’s a good idea to
+keep the emulated screen size small. But, I would also kinda like to do
+something fun but not distracting with the area around the screen. Making the
+browser smaller would be possible but inconvenient, because I prefer a larger
+size for general use. Also, I want to keep some visual distance between the
+active emulated screen area and all the annoying UI clutter from the browser
+tab and titlebar UI.</p>
+<p>So, I’ve been asking myself two questions:</p>
+<ol type="1">
+<li><p>What could I put around the emulated screen that would be an improvement
+over an abrupt transition to a solid color background? (maybe weird
+non-rectangular Winamp style skins? maybe a Plan 9 style bezel then a
+user-configurable background image?)</p></li>
+<li><p>What would be a good way to provide non-volatile storage for content that
+gets created in a wasm module? (UI like a game save before tab is closed?)</p></li>
+</ol>
+<h2 id="todays-visual-research">Today’s Visual Research</h2>
+<p>Those two questions led me to some ebay vintage computing research:</p>
+<ol type="1">
+<li><p>Deep dive on industrial design of old CRT monitors. Favorites mostly had
+two-tone beige bezels with rounded corners. That design, with a gradual
+low-contrast transition from the glass to the surrounding room, works well
+to avoid drawing my eye away from the content on the screen. Worst bezel was
+Commodore PET which has a super distracting design. Best bezel favorites
+were Apple IIc green phosphor and Compaq 2650 luggable.</p></li>
+<li><p>Deep dive on industrial design of game console cartridges. I’m thinking
+about this in relation non-volatile storage to drag and drop of files
+between host system desktop and a tab running my wasm module. Kinda like
+how MakeCode .hex file downloads work with micro:bit.</p></li>
+</ol>
+<h2 id="background-motivation">Background &amp; Motivation</h2>
+<p>Having made some progress on getting pixels out from wasm to javascript and an
+HTML canvas, I’m in a position where I could start on implementing string
+blitting, keyboard input, and a threaded interpreter. But, my instinct is to
+first detour to making the demo page less ugly and to arrange for some form of
+non-volatile storage that’s available to the wasm module.</p>
+<p>In the past, with user testing of prototypes for brand new apps, one of the
+problems I ran across is that people don’t like it if you give them a fancy UI
+for creating content but omit a way to save and load that content. Seems maybe
+better to leave the UI looking obviously unfinished until the save and load
+mechanism works?</p>
+<p>My general plan for Markab is to build text, graphics, and perhaps sound,
+editors in a threaded interpreter running inside of a wasm module. So, to start
+off, the data from those editors will only exist in a memory buffer that will
+vanish when the browser tab with the wasm module is closed or reloaded.</p>
+<p>Yeah, I know about cookies and local storage. But, I want this to work well for
+people like me who dislike the privacy implications of not clearing those out
+on a regular basis. Given the way I use my browser, both cookies and local
+storage are about as volatile as a wasm memory in a tab. Usually I test in a
+Chrome incognito window, so local storage is useless to me.</p>
+<h2 id="conclusion-png-files-and-skeuomorphic-game-cart-slots">Conclusion: PNG files and skeuomorphic game cart slots?</h2>
+<p>What I want to try is having a skeuomorphic bezel thing that at least vaguely
+resembles the old luggable PCs with drive bays next to the CRT. Or, maybe it
+could be more like some kind of anime computer console thing.</p>
+<p>The important part would be to have a clear, but chill, visual element on the
+screen that communicates, “Hello, glad to meet you! I am a data slot that works
+with drag-and-drop. If you want, you could feed me a data disc or a cart!”</p>
+<p>I would really like it if the “carts” could be image files that the host OS
+would present as thumbnails that actually looked like a disc or a memory card.
+If the image files had a preview that clearly invoked thoughts of an anime
+style data disc, or a game console cartridge, that would be pretty awesome. I
+think this could work with PNG files pretty easily by putting the data in a
+metadata chunk. With careful design, it might even be possible to access the
+metadata field using copy and paste in the host OS’s normal image editor.</p>
+<p>Having at least two or three disc/cart slots could open the door to stuff like
+plugging in a read-only Japanese font disc along with a writable “memory card”
+if you wanted to write a document with Kanji. Reasonably comprehensive CJK
+16x16px bitmap glyph coverage for Unicode is about 1-2MB uncompressed, so
+that’s why I’m thinking something like a read-only optical disc for font data.
+Memory carts for general use could probably be much smaller.</p>
+<p>It would also be nice to have an option to drag a desktop background image onto
+a data disc slot and have it set as the background image for whole browser tab
+holding the emulated screen. Doing this in a fullscreen tab could let you have
+an i3 or Plan 9-ish looking desktop on an OS that would normally have a lot more
+visual cruft around the edges of its windows.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="/LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-14b: Starting to implement load &amp; save</title>
+<link rel="preload" href="/style.css" as="style">
+<link href="/style.css" rel="stylesheet"></head><body>
+<header><a href="/">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-14b: Starting to implement load &amp; save</h1>
+<hr><ul>
+<li><a href="#tradeoffs-of-wasm-vs.-native">Tradeoffs of WASM vs. native</a></li>
+<li><a href="#notes-on-building-a-luggable-style-console-with-css">Notes on building a luggable-style console with CSS</a></li>
+</ul><hr>
+<p>Yesterday I was thinking about trying to have Markab support drag-and-drop file
+load and save by putting ROM and save file data in PNG metadata chunks. I now
+believe that would be somewhat risky. Not sure if the pro of cool preview icons
+outweighs the con of OS tools potentially stripping metadata. Possible better
+options include just using regular file extensions like .txt, .fs, .wav, etc.,
+or perhaps coming up with a new file extension to store a snapshot of the VM
+memory image.</p>
+<p>After reading about the misadventures of people who attempted to store long-ish
+strings in PNG or JPEG metadata, it sounds like that’s not a reliable thing to
+do. Apparently it’s common for email clients, image exporters, and other tools
+to resize images and strip image metadata to make the files smaller. This
+reportedly tends to lead to loss of metadata when people attempt to share the
+files between devices. Hard to say how much of a problem that might be. Seems
+like, the safer option might be encoding save data into the pixel data.</p>
+<h2 id="tradeoffs-of-wasm-vs.-native">Tradeoffs of WASM vs. native</h2>
+<p>Thinking through all the potential hassles involved in getting load and save to
+work from inside a browser sandbox, I’m not sure it’s a good idea. I think it’s
+probably important to do sandboxed wasm as a starting point. But, I’m less
+certain about if, and on which platforms, I should implement graphics and sound
+with native APIs. Probably I should support native APIs on linux, possibly I
+should do macOS, but windows is out of the question. Wasm has the advantage of
+supporting windows basically for free, if I can get it working on mac or linux.</p>
+<p>The other big advantage of the WASM is supporting extremely convenient online
+demos for people who want to try the system. Also, because of the browser
+sandboxing, people don’t need to worry much about possible malware when running
+roms from strangers. I suppose many people are happy to download and run native
+code, but ethically I’m not comfortable with encouraging people to engage in
+such high risk behavior. I’m also not willing to jump through all the hoops
+(membership fees, code signing, etc) to participate in the official developer
+programs for macOS and windows. Wasm is probably my best shot at being
+inclusive towards the people who use those platforms.</p>
+<h2 id="notes-on-building-a-luggable-style-console-with-css">Notes on building a luggable-style console with CSS</h2>
+<p>Improved the html &amp; css somewhat on the wasm demo page. Now the screen looks
+more like a crt in a console. There’s a bezel around the canvas element and a
+data slot area off to the right side with some boxes that can serve as
+drag-and-drop targets. Still need to figure out how that part will work in
+javascript. Also, need to draw some background images that actually look like
+disc and memory card slots with eject buttons. Maybe also a reset button?</p>
+<p>Links</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/border" class="uri">https://developer.mozilla.org/en-US/docs/Web/CSS/border</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius" class="uri">https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius</a></li>
+</ul>
+<p>Trying to apply the bezel border directly to the canvas element had the effect
+of scaling the canvas contents down to accommodate part of the border line
+being drawn inside of the canvas element’s width and height. Not good. So, I
+added a bezel div around the canvas and applied the border to the bezel div.
+That seems to work fine.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="/LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>

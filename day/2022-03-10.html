@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-10: Makefile for new WASM module</title>
+<link rel="preload" href="/style.css" as="style">
+<link href="/style.css" rel="stylesheet"></head><body>
+<header><a href="/">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-10: Makefile for new WASM module</h1>
+<hr><ul>
+<li><a href="#notes-on-compiling-c-to-wasm-with-only-clang-and-makefile">Notes on compiling C to WASM with only clang and Makefile:</a></li>
+<li><a href="#posix-makefile-notes">POSIX Makefile notes</a></li>
+<li><a href="#llvm-compiler-versions-supporting-wasm32-target">LLVM compiler versions supporting wasm32 target</a></li>
+</ul><hr>
+<p>Update: the new WASM module works. It draws a test pattern with a binary
+counter. Demo is at <a href="https://samblenny.github.io/markab/www/" class="uri">https://samblenny.github.io/markab/www/</a></p>
+<p>Today’s task: build a WASM module from C with LLVM to generate a test
+pattern in the shared framebuffer.</p>
+<h2 id="notes-on-compiling-c-to-wasm-with-only-clang-and-makefile">Notes on compiling C to WASM with only clang and Makefile:</h2>
+<p>References:</p>
+<ul>
+<li><a href="https://surma.dev/things/c-to-webassembly/" class="uri">https://surma.dev/things/c-to-webassembly/</a></li>
+<li><a href="https://8bitworkshop.com/blog/misc/compiling-emulators-to-webassembly-without-emscripten.md.html" class="uri">https://8bitworkshop.com/blog/misc/compiling-emulators-to-webassembly-without-emscripten.md.html</a></li>
+<li><a href="https://nullprogram.com/blog/2017/08/20/" class="uri">https://nullprogram.com/blog/2017/08/20/</a> (“A Tutorial on Portable Makefiles”)</li>
+<li><a href="https://pubs.opengroup.org/onlinepubs/9699919799/utilities/make.html" class="uri">https://pubs.opengroup.org/onlinepubs/9699919799/utilities/make.html</a> (POSIX make spec)</li>
+<li><a href="https://lld.llvm.org/WebAssembly.html" class="uri">https://lld.llvm.org/WebAssembly.html</a> (command line argument docs for lld wasm32 linker)</li>
+<li><a href="https://github.com/WebAssembly/tool-conventions/issues/64" class="uri">https://github.com/WebAssembly/tool-conventions/issues/64</a> (discussion on using lld arguments)</li>
+</ul>
+<h2 id="posix-makefile-notes">POSIX Makefile notes</h2>
+<p>The five internal macros:</p>
+<ul>
+<li><code>$@</code> : full target name of current target – from <code>lib.a: file.c</code>, <code>$@</code> means <code>lib.a</code></li>
+<li><code>$%</code> : for archive library members, from <code>lib.a(file.o)</code>, <code>$%</code> means <code>file.o</code></li>
+<li><code>$?</code> : list of prereq’s newer than current target</li>
+<li><code>$&lt;</code> : for inference rule, <code>$&lt;</code> is filename that triggered the rule (sorta like <code>$@</code>)</li>
+<li><code>$*</code> : current target minus its suffix</li>
+</ul>
+<h2 id="llvm-compiler-versions-supporting-wasm32-target">LLVM compiler versions supporting wasm32 target</h2>
+<p>Apple’s build of clang for macOS does not support the wasm32 target, but
+apparently the homebrew build does? Have not personally verified that.</p>
+<p>Check clang targets of Apple’s clang v13 build (wasm32 not included):</p>
+<pre><code>$ clang --print-targets | grep &#39;x86\|wasm&#39;
+    x86        - 32-bit X86: Pentium-Pro and above
+    x86-64     - 64-bit X86: EM64T and AMD64</code></pre>
+<p>Check clang v11 targets on Debian 11:</p>
+<pre><code>$ clang --print-targets | grep wasm
+    wasm32     - WebAssembly 32-bit
+    wasm64     - WebAssembly 64-bit</code></pre>
+<p>Check clang v11 targets on Raspbian Buster:</p>
+<pre><code>$ clang-11 --print-targets | grep wasm
+    wasm32     - WebAssembly 32-bit
+    wasm64     - WebAssembly 64-bit</code></pre>
+<p>Note that on Buster, <code>/usr/bin/clang</code> is clang v7, which is too old. But,
+Buster has clang v11 as a package. You just have to <code>sudo apt install clang-11</code>
+and then invoke it as <code>clang-11</code>.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="/LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>

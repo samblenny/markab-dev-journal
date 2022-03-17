@@ -1,0 +1,107 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-11: Rework Framebuffer Interface</title>
+<link rel="preload" href="/style.css" as="style">
+<link href="/style.css" rel="stylesheet"></head><body>
+<header><a href="/">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-11: Rework Framebuffer Interface</h1>
+<hr><ul>
+<li><a href="#links-handling-wasm-js-shared-memory-css-scaling-for-html-canvas-js-shifts-etc.">Links (handling wasm-js shared memory, CSS scaling for html canvas, js shifts, etc.):</a></li>
+<li><a href="#debugging-the-framebuffer-code">Debugging the framebuffer code</a></li>
+</ul><hr>
+<p>Working on defining a good framebuffer interface between wasm and js.</p>
+<p>Decided to arbitrarily start with the constraint of a 64KB maximum video ram
+size (“the framebuffer”) and let everything else follow from there. The choice
+of 64KB is meant to accommodate a byte addressable pixel buffer on a stack
+machine with 16-bit address bus width. I’m thinking that the video ram could
+go on its own bus, separate from regular program memory.</p>
+<p>Would like to leave the door open to supporting different types of video modes.</p>
+<p>Current configuration for testing is medium sized, medium DPI LCD monitor with
+simulated display hardware of html canvas with 2x CSS scaling (“2x zoom”). This
+gives convenient readability and a mildly pixelated look. Maybe the zoom could
+be adjustable between 1x, 2x, and 4x to accommodate different hardware display
+sizes and DPI ratios.</p>
+<p>Constellation of uses I would like to potentially support:</p>
+<ol type="1">
+<li><p>Monochrome 1-bit per pixel to cover small hardware devices or large display
+areas on a PC. This could work for making a big text editor, or perhaps a
+cheap hardware synth/sequencer with a Cortex M0/M4 dev board and OLED or LCD
+from Adafruit. Resolutions could range from as small as 128x32 or 128x64 on
+cheap OLED up to 1024x512 on laptop or PC.</p></li>
+<li><p>Uxn compatibility mode with 2-bits per pixel that could be implemented on
+lots of different hardware. This could handle up to 640x400 with 4 colors,
+supporting uses like text editor with color syntax highlighting, game with
+kinda big map, painting moderately big images, and so on.</p></li>
+<li><p>Color picker mode with ability to display many colors at once for the
+purpose of building themes and color palettes. Assuming 8-bits per pixel,
+this could support resolution of up to 256x256. With 4-bits per pixel, the
+resolution could be up to 360x360.</p></li>
+</ol>
+<p>To do all this, the data structure on the wasm side could look like…</p>
+<p>Frame buffer:</p>
+<ul>
+<li>FB_BYTES: array of uint8_t[65536], “the video ram”, “the framebuffer”</li>
+<li>FB_SIZE: 65536</li>
+</ul>
+<p>Frame buffer configuration registers:</p>
+<ul>
+<li>FB_WIDE: pixels per horizontal line (limit of X axis)</li>
+<li>FB_HIGH: vertical lines per screen (limit of Y axis)</li>
+<li>FB_DEEP: pixel bit depth in units of bits per pixel</li>
+<li>FB_ZOOM: scaling factor to be applied by the display driver, “zoom”</li>
+</ul>
+<h3 id="links-handling-wasm-js-shared-memory-css-scaling-for-html-canvas-js-shifts-etc.">Links (handling wasm-js shared memory, CSS scaling for html canvas, js shifts, etc.):</h3>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getUint32" class="uri">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getUint32</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getUint8" class="uri">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getUint8</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext#parameters" class="uri">https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext#parameters</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/scale" class="uri">https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/scale</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Unsigned_right_shift" class="uri">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Unsigned_right_shift</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Right_shift" class="uri">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Right_shift</a></li>
+</ul>
+<h3 id="debugging-the-framebuffer-code">Debugging the framebuffer code</h3>
+<p>I started off just exporting a function from the wasm module to return a
+pointer to the FB_BYTES framebuffer array. That worked. It was simple. Easy.
+Reliable…</p>
+<p>So, of course, I decided that instead I should export the FB_BYTES and FB_SIZE
+symbols and let the javascript wasm loader link against them. Perhaps a big
+mistake? This is turning into an epic quest. Seems like the exports are
+pointers, so I need to figure out how to dereference them properly into the
+wasm shared memory buffer. That’s turning into a major hassle. I can see the
+correct values in the shared buffer when I dump them to the console log, but my
+code comes back with the wrong values. Maybe there’s some kind of weird
+endianness or off by one thing happening?</p>
+<p>Anyhow, along the way, as I’m flailing around trying to make sure I’m
+initializing the frame buffer with values that will be recognizable if I access
+them by with the wrong alignment or endianness from javascript, LLVM clang and
+lld decided they wanted to optimize some of my code by linking against
+<code>memset</code>. So… yay! Now I get to do a side quest to implement memset!</p>
+<p>Took me a while to discover the expected function signature and now to make it
+work. The console log showed a wasm module initialization error about missing
+memset in ‘env’, which is the object LLD expects to link against. Chrome
+DevTools disassembly for the wasm module showed it wanted to find:</p>
+<pre><code>(import &quot;env&quot; &quot;memset&quot;) (param i32 i32 i32) (result i32)</code></pre>
+<p>I thought maybe I could convince clang and llvm to skip that import by
+providing a <code>void * memset(void * dest, int val, int len)</code> function in C. But,
+I wasn’t able to get that working. I don’t understand very well about the
+details of how LLVM handles intrinsic functions, linking against stdlib, or
+whatever it was attempting to accomplish. I brought this on myself by supplying
+the <code>-Os</code>, <code>-nostdlib</code> and <code>-Wl,--allow-undefined</code> flags to clang. But, those
+are kinda important for getting the wasm module to work. There’s probably a more
+subtle combination of linker flags to suppress the optimization that wanted to
+link memset. But, for now, that’s still a mystery.</p>
+<p>Workaround is to just provide the silly javascript memeset implementation to
+make the linker happy. This works: <code>function memset(dest, val, len) {...}</code>.</p>
+<p><strong>Update:</strong> Turns out it was indeed an endianness problem like I suspected. I
+failed to read the docs for DataView.getUint32() carefully enough. Turns out it
+defaults big-endian unless you pass <code>true</code> for the optional <code>littleEndian</code> arg.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="/LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>

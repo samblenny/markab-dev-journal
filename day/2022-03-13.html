@@ -1,0 +1,266 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-13: Journal CSS, typing rulers, video modes</title>
+<link rel="preload" href="/style.css" as="style">
+<link href="/style.css" rel="stylesheet"></head><body>
+<header><a href="/">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-13: Journal CSS, typing rulers, video modes</h1>
+<hr><ul>
+<li><a href="#mediation-on-what-makes-a-video-mode-look-good">Mediation on, what makes a video mode look good?</a></li>
+<li><a href="#emacs-save-as-for-starting-new-file-from-template">Emacs save-as for starting new file from template</a></li>
+<li><a href="#emacs-ruler-mode">Emacs ruler-mode</a></li>
+<li><a href="#emacs-ascii-art-tricks">Emacs ASCII art tricks</a></li>
+<li><a href="#friden-flexowriter">Friden Flexowriter!</a></li>
+<li><a href="#blake-pattersons-vintage-computing-screenshot-albums">Blake Patterson’s vintage computing screenshot albums</a></li>
+</ul><hr>
+<p>Had a bunch of fun yesterday with html and css of the index file for the dev
+journal. So, decided to keep working on it today. Also did a bunch of reading
+and thinking on old video modes and display hardware.</p>
+<ol type="1">
+<li><p>Moved the embedded style block out to a css file to prepare for maybe
+rendering these markdown journal entries as html. Also changed to a better
+method of vertical spacing between entries in the index.</p></li>
+<li><p>Workflow for editing markdown: Made a template file that’s easy to copy.
+Figured out some emacs tricks (mainly ruler-mode) to make it more convenient
+to edit with a 79 character fill-mode.</p></li>
+<li><p>Side quest: Image search for “IBM Selectric” and “DOS word processor”.
+Wanted to see their rulers. Results were awesome. 5 stars. Would recommend.</p></li>
+<li><p>Side quest: Ebay search for “IBM selectric II font balls”. Also good. This
+makes me curious about how many relatively high quality IBM bitmap typefaces
+may be floating around besides just Courier.</p></li>
+<li><p>Side quest: Blake Patterson’s Byte Cellar blog and vintage computing
+screenshot photo albums</p>
+<ul>
+<li><a href="https://bytecellar.com/" class="uri">https://bytecellar.com/</a>,</li>
+<li><a href="https://bytecellar.com/2016/06/05/a-look-back-at-three-decades-of-word-processors/" class="uri">https://bytecellar.com/2016/06/05/a-look-back-at-three-decades-of-word-processors/</a></li>
+<li><a href="https://www.flickr.com/photos/blakespot/albums" class="uri">https://www.flickr.com/photos/blakespot/albums</a></li>
+</ul>
+<p>This turned into a meditation on what is it that’s so appealing about
+retro graphics, visually? (excluding nostalgia factor)</p></li>
+</ol>
+<h2 id="mediation-on-what-makes-a-video-mode-look-good">Mediation on, what makes a video mode look good?</h2>
+<p>Reflecting on having spent a few hours sifting through all the stuff I’ve
+linked to here, on the surface it looks random. But, I feel it’s actually
+mostly on task for the framebuffer, video mode, and color palette stuff I’m
+currently thinking through for Markab.</p>
+<p>I’m trying to work out to what extent I agree or disagree with uxn’s approach
+to using a limited color palette. I’m also considering the question of how
+much configurability of video modes is helpful, and at what point it becomes
+problematic by offering too many choices.</p>
+<p>Having looked at many computers and printed material in person, and having
+tonight just sifted through many of photos of different text and games graphics
+on a variety of displays, I’m trying to articulate what looks good and why.</p>
+<p>Thoughts and observations:</p>
+<ol type="1">
+<li><p>Text on low resolution monochrome character LCDs on portables like the TI
+CC-40, Epson PX-8, and modern cheap graphing calculators looks great.
+Clearly defined edges, good contrast (sorta… in the right light), and big
+enough to read at arm’s length. I think this has to do with the fact that
+monochrome LCD pixels can be big while also having a solid shape with
+clearly defined edges. You can’t do big pixels in the same way with a color
+LCD because each pixel has separate red, green, and blue sub-pixels.</p></li>
+<li><p>Text and graphics on the old Macintosh 9" CRTs looks great in a way that
+clearly improves upon lower resolution screens like on the Apple II series.
+That might sound so self-evident as to not be worth writing down, but I’m
+trying to think through and articulate, specifically, what is it that makes
+that difference?</p></li>
+<li><p>In particular, what’s different about old low-res graphics rendered on a
+blurry color video CRT (Apple II, etc.), old hi-res graphics rendered on an
+old crisp monochrome CRT (Mac Plus), emulated retro graphics on modern LDCs,
+and modern pixel art rendered on modern LCDs?</p></li>
+<li><p>I’m picturing all these considerations as points on a 3D graph with axes:</p>
+<ul>
+<li>quality of color palette design</li>
+<li>sharpness of pixels</li>
+<li>size of pixels</li>
+</ul>
+<pre><code>
+        ↑                                    • IIgs + color composite (gross)
+ bad    |                                      - blurry
+ palette|                                      - lowRes
+        |                                      - bad palette
+        |
+        |
+        |                  hiRes
+        |                 ↗
+        |               ⁄   • Mac Plus (great)
+        |             ⁄      - sharp
+        |           ⁄      - hiRes
+        |         ⁄      - good palette
+        |       ⁄                            • IIc + green mono (decent)
+        |     ⁄                                - blurry
+ good   |  lowRes   • Epson PX-8               - lowRes
+ palette| ⁄        - sharp,lowRes,good         - good palette
+        +---------------------------------------&gt;
+        sharp                              blurry</code></pre>
+<p>For color palette quality, to my eye, monochrome automatically ranks as very
+good, particularly for green or white phosphor. The contrast between black
+and green or black and white is very good. For monochrome LCD, the contrast
+can be similarly good, allowing for favorable conditions of ambient light,
+viewing angle, temperature, and contrast adjustment.</p>
+<p>For color CRTs on retro hardware, some of the color palettes look okay, but
+many look pretty bad. For sharp lines like text and rectangular window
+borders, the effect is even worse on blurry low res color composite CRT. For
+example, Apple’s GS/OS on the IIgs with the Apple Color Composite monitor
+looked gross. But, conversely, for some low resolution pixel art, blurry
+pixels can actually make it look better on an old junky CRT.</p>
+<p>Screenshots of game art on the Mac Plus CRT have a really different quality
+to them which, I think, comes from the combination of crisp contrast and
+dithered shading. Apple’s early Macintosh productivity apps, used black text
+on a white background which looks like a credible imitation of paper.</p>
+<p>Mac Plus game graphics seemed to use a black background, white foreground,
+and dithered shading (not always). This looks not at all like paper. Vibes
+were more of caves, haunted mansions, dungeons, outer space, and perhaps a
+bit Tron-ish. The dithered shading thing works because the resolution is
+pretty high.</p>
+<p>Conclusions…</p>
+<ol type="1">
+<li><p>Sharpness and contrast are very important for text and line art</p></li>
+<li><p>Perceived quality of low resolution color seems to depend heavily on
+color palette. With good color selections, blurry graphics can look
+pretty good even on a garbage display. This is much less true for text
+though, unless the type size is quite large.</p></li>
+<li><p>Monochrome on a display with sharp pixels generally looks awesome. It
+works with big chunky pixels. It works with little pixels. Blurry pixels
+are less good, but that issue has gone away with the monochrome CRTs.</p></li>
+<li><p>Dithered shading on a monochrome display mostly works once the resolution
+gets higher. On 320x200 composite video resolution, dithering seems maybe
+less appropriate than a high contrast monochrome pixel art rendering
+style. At higher resolution, like 512x342 for Mac Plus, dithering is
+great.</p></li>
+<li><p>Going further forward in time to screenshots for Amiga, SGI, Windows, and
+newer Macs, the screen sizes got larger and took on a distinctly more
+cluttered feel. It seems like maybe, once there are enough pixels on the
+screen to go beyond the bare minimum for rendering 80 columns of text,
+available space starts getting jammed full of toolbars, scrollbars,
+buttons, boxes, borders, icons, and other assorted clutter.</p>
+<p>At some point in screen resolution growth, it looks like screen space
+started getting rapidly colonized by “design” and brand logos. Not as bad
+as magazine ads, but seemingly inspired by a similar type of thinking.</p>
+<p>I wonder if maybe a big part of the retro computing and pixel art appeal
+is that it reaches back to a format where there is less room for things
+which are non-essential. When available pixels are precious, they get
+allocated with greater care, and the resulting experience is better.</p></li>
+<li><p>Enthusiasm for “low-distraction” writing setups seems maybe motivated by
+this same problem where modern operating systems have evolved to a form
+that happily obliges the corporate desire to jam branding into eyeballs.</p></li>
+<li><p>Choosing to work with low screen resolutions could be viewed as an immune
+response against branding and ads. Perhaps enthusiasm for retro computing
+is not always as much about liking the old aesthetics as it is about the
+urge to flee from modern advertising?</p></li>
+</ol></li>
+</ol>
+<h2 id="emacs-save-as-for-starting-new-file-from-template">Emacs save-as for starting new file from template</h2>
+<ol type="1">
+<li>Open template file</li>
+<li>Use <code>C-x C-w</code></li>
+<li>Type new filename and RET at the prompt to save it with a new name</li>
+</ol>
+<h2 id="emacs-ruler-mode">Emacs ruler-mode</h2>
+<p>Turning on ruler-mode with <code>M-x ruler-mode RET</code> puts a ruler across the top of
+the terminal window. Ruler bar Looks like this (fill-column set at 72):</p>
+<pre><code>0....!....1....!....2....!....3.#..!....4....!....5....!....6....!.¦..7.¶..!....</code></pre>
+<p>There’a a <code>¶</code> to mark fill-column, a <code>¦</code> to mark the cursor’s current column.</p>
+<p>Looks a lot like the ruler on an IBM Selectric typewriter. Vaguely like some of
+the ruler features on DOS-era word processors. Similar to MS Word 1.0 and 5.5.
+Not much like WordStar. DOS word processor rulers seemed to have a bit more
+emphasis on indicating location and type of configurable tab stops.</p>
+<h2 id="emacs-ascii-art-tricks">Emacs ASCII art tricks</h2>
+<p>Unicode names for arrows: <a href="https://unicode.org/charts/nameslist/n_2190.html" class="uri">https://unicode.org/charts/nameslist/n_2190.html</a></p>
+<p>Unicode names for slashes: <a href="https://unicode-search.net/unicode-namesearch.pl?term=SLASH" class="uri">https://unicode-search.net/unicode-namesearch.pl?term=SLASH</a></p>
+<p>Method to insert a Unicode character by name in emacs:</p>
+<ol type="1">
+<li>Use <code>C-x 8 RET</code> to run the insert-char interactive command</li>
+<li>Type the Unicode name of the character (tab completion helps)</li>
+<li><code>RET</code> to insert</li>
+</ol>
+<p>Method to draw ASCII art in emacs without typing tons of spaces:</p>
+<ol type="1">
+<li>Use <code>M-x picture-mode RET</code> to start picture-mode</li>
+<li>Type stuff</li>
+<li>Exit picture mode with <code>C-c C-c</code></li>
+</ol>
+<p>Method to do rectangular cut and paste in picture-mode:</p>
+<ol type="1">
+<li>Toggle rectangle mark mode to on with <code>C-x SPC</code></li>
+<li>Start mark at top left of rect with <code>C-SPC</code></li>
+<li>Move point to bottom left of rect with cursor keys</li>
+<li>Cut rect with <code>C-w</code> (or copy with <code>M-w</code>)</li>
+<li>Move point to top left of desired paste location</li>
+<li>Paste with <code>C-y</code></li>
+<li>Toggle rectangle mark mode to off with <code>C-x SPC</code></li>
+</ol>
+<h2 id="friden-flexowriter">Friden Flexowriter!</h2>
+<p>This thing is wild: <a href="https://en.wikipedia.org/wiki/Friden_Flexowriter" class="uri">https://en.wikipedia.org/wiki/Friden_Flexowriter</a></p>
+<p>It’s an automatic typewriter. There are the usual typewriter-y bits, but there
+was also a configuration with two paper tape readers that could be used for in
+a mail merge feature for typing form letters! I had no idea such machines
+existed. Wow.</p>
+<h2 id="blake-pattersons-vintage-computing-screenshot-albums">Blake Patterson’s vintage computing screenshot albums</h2>
+<p>These are interesting for showing a variety of different types of BBS
+interfaces and low-res color graphics in the form of photos of CRTs. Rather
+different than emulator screenshots.</p>
+<p>BBS login screens:</p>
+<ul>
+<li><a href="https://www.flickr.com/photos/blakespot/albums/72157707233990765" class="uri">https://www.flickr.com/photos/blakespot/albums/72157707233990765</a></li>
+</ul>
+<p>RetroBattleStations entries:</p>
+<ul>
+<li><a href="https://www.flickr.com/photos/blakespot/albums/72157675384122452" class="uri">https://www.flickr.com/photos/blakespot/albums/72157675384122452</a></li>
+</ul>
+<p>TI CC-40 (portable with wide aspect ratio LCD):</p>
+<ul>
+<li>Kinda like TRS-80 Model 100</li>
+<li>Has a really interesting removable memory cartridge</li>
+<li><a href="https://www.flickr.com/photos/blakespot/albums/72157625387234589" class="uri">https://www.flickr.com/photos/blakespot/albums/72157625387234589</a></li>
+</ul>
+<p>Amiga 1000:</p>
+<ul>
+<li><a href="https://www.flickr.com/photos/blakespot/albums/72157621596272210" class="uri">https://www.flickr.com/photos/blakespot/albums/72157621596272210</a></li>
+</ul>
+<p>Apple IIe:</p>
+<ul>
+<li><a href="https://www.flickr.com/photos/blakespot/albums/72157609631794748" class="uri">https://www.flickr.com/photos/blakespot/albums/72157609631794748</a></li>
+</ul>
+<p>TRS-80 Model 4:</p>
+<ul>
+<li>Time Bandit screenshots (monochrome isometric) are kinda interesting</li>
+<li>Foreground/background contrast on a monochrome CRT with border area and bezel
+gives a really different impression compared to sharp rectangular emulator
+screenshots. Black background is just the same color as the border area of
+the CRT. I’m not explaining it well.</li>
+<li><a href="https://www.flickr.com/photos/blakespot/albums/72157604743399188" class="uri">https://www.flickr.com/photos/blakespot/albums/72157604743399188</a></li>
+</ul>
+<p>Mac Plus:</p>
+<ul>
+<li>Monochrome CRT game screens in a dark room. Similar vibes as with Model 4,
+but Mac resolution is higher and there’s a lot more dithered shading.</li>
+<li><a href="https://www.flickr.com/photos/blakespot/albums/72157604396195465" class="uri">https://www.flickr.com/photos/blakespot/albums/72157604396195465</a></li>
+</ul>
+<p>Epson PX-8 (portable with wide aspect ratio LCD):</p>
+<ul>
+<li>Really nice LCD with 8 lines of chunky text</li>
+<li>Built in micro-cassette drive</li>
+<li><a href="https://www.flickr.com/photos/blakespot/albums/72157604338172447" class="uri">https://www.flickr.com/photos/blakespot/albums/72157604338172447</a></li>
+</ul>
+<p>Atari 520ST</p>
+<ul>
+<li>Some of the screenshots have color backgrounds that fill the entire CRT
+visible area, with overscan going under the bezel, are interesting.</li>
+<li><a href="https://www.flickr.com/photos/blakespot/albums/72157604329654261" class="uri">https://www.flickr.com/photos/blakespot/albums/72157604329654261</a></li>
+</ul>
+<p>Apple IIc</p>
+<ul>
+<li>CRT is good example of classic low-res green screen text mode</li>
+<li><a href="https://www.flickr.com/photos/blakespot/albums/72157604316614196" class="uri">https://www.flickr.com/photos/blakespot/albums/72157604316614196</a></li>
+</ul>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="/LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>

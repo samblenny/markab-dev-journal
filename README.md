@@ -10,14 +10,12 @@ This is the place where I keep notes about writing code for
 
 HTML journal entry index is at: https://samblenny.github.io/markab-dev-journal/
 
-For now it just links to the journal entries as plaintext markdown files, with
-names according to the date I wrote them.
+On 2022-03-17 I implemented a new system with make and Pandoc to convert the
+markdown entries to html. So, now, the html index links to html journal entries
+instead of raw markdown files.
 
-For now, the html index is hand-coded and just has a reverse chronological list
-of journal entries with links to the markdown files as plain text. All this may
-change suddenly if I decide I need to reorganize it. There's a moderate chance
-that I might rig up a thing to render the markdown to html files. No promises.
-This is a new workflow for me. Lots of improvising going on here.
+All this may change suddenly if I decide I need to reorganize it. This is a new
+workflow for me. Lots of improvising going on here.
 
 
 ## License & Copyright

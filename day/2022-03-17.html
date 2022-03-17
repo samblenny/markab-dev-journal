@@ -1,0 +1,164 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-17: Pandoc .md to .html, Forth books</title>
+<link rel="preload" href="/style.css" as="style">
+<link href="/style.css" rel="stylesheet"></head><body>
+<header><a href="/">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-17: Pandoc .md to .html, Forth books</h1>
+<hr><ul>
+<li><a href="#first-attempts-at-pandoc-markdown-to-html-conversion">First attempts at Pandoc markdown to HTML conversion</a></li>
+<li><a href="#converting-.md-to-html-with-make-and-pandoc">Converting *.md to html with make and pandoc</a></li>
+<li><a href="#css-notes">CSS Notes</a></li>
+<li><a href="#books-on-implementing-forth-systems">Books on implementing forth systems</a></li>
+</ul><hr>
+<h2 id="first-attempts-at-pandoc-markdown-to-html-conversion">First attempts at Pandoc markdown to HTML conversion</h2>
+<p>I’m thinking maybe Pandoc would be a good option for converting these dev journal
+files from markdown to static html.</p>
+<p>This is on Debian 11 (Bullseye):</p>
+<pre><code>$ sudo apt install pandoc
+$ man pandoc</code></pre>
+<p>Notes from <code>man pandoc</code>:</p>
+<ul>
+<li>Document fragment conversion: <code>pandoc -o out.html in.md</code></li>
+<li>Standalone document conversion: <code>pandoc -s -o out.html in.md</code></li>
+<li>Pandoc will detect formats from .html and .md</li>
+<li>To specify markdown dialects: <code>-f commonmark</code>, <code>-f gfm</code> (github flavor),
+<code>-f markdown</code> (Pandoc markdown), <code>-f markdown_mmd</code> (MultiMarkdown)</li>
+<li><code>--list-input-formats</code></li>
+<li><code>--list-output-formats</code></li>
+<li><code>--list-extensions[=FORMAT]</code> where FORMAT default is <code>markdown</code></li>
+<li>Check syntax highlight lang options: <code>pandoc --list-highlight-languages</code></li>
+</ul>
+<p>First attempt (pandoc markdown):</p>
+<pre><code>$ pandoc --wrap=preserve --strip-comments 2022-03-08.md
+&lt;h1 id=&quot;first-steps&quot;&gt;2022-03-08: First Steps&lt;/h1&gt;
+&lt;p&gt;Started a new repo for this project that I’ve been thinking about for years.
+Took me a while to come up with a name. Settled on Markab.&lt;/p&gt;
+&lt;p&gt;General goal is to make portable multimedia creation and playback system
+suitable for making language learning apps, but with enough flexibility to
+be used for other purposes.&lt;/p&gt;</code></pre>
+<p>Hmm… not bad.</p>
+<p>Tried it again with a preview of all my journal entries so far. Seems like
+pandoc markdown was not converting lines starting with <code>-</code> for bullet lists
+into <code>&lt;ul&gt;&lt;li&gt;..&lt;/li&gt;...</code> lists. Tried again using <code>-f gfm</code> and it seems to
+work better:</p>
+<pre><code>for f in *.md; do
+  echo
+  echo &quot;=== $f === &quot;
+  pandoc -f gfm --wrap=preserve $f
+done | less</code></pre>
+<p>That looked pretty good. But, need to figure out how to do header and footer
+template…</p>
+<p>Turns out that adding a YAML block to the .md files to set metadata for the
+template engine complicates things a bit. Using <code>-f gfm</code> doesn’t play nice
+with the yaml block. Parsing glitches and adds a horizontal rule tag. This
+seems to work for getting pandoc markdown to handle lists better:</p>
+<pre><code>pandoc -f markdown+lists_without_preceding_blankline --wrap=preserve in.md</code></pre>
+<p>The trick is to request the <code>+lists_without_preceding_blankline</code> extension.</p>
+<p>Possible alternate method to let pandoc auto-detect document title from the
+h1 tag:</p>
+<pre><code>pandoc ... --shift-heading-level-by=-1 ... in.md</code></pre>
+<p>Yes! That works!</p>
+<h2 id="converting-.md-to-html-with-make-and-pandoc">Converting *.md to html with make and pandoc</h2>
+<p>I got a Makefile working to convert all my .md journal entries into html
+using a template file.</p>
+<p>Pandoc <a href="https://pandoc.org/MANUAL.html#template-syntax">template syntax docs</a> are pretty helpful.</p>
+<p>My template looks like this:</p>
+<pre><code>&lt;!DOCTYPE html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;description&quot; content=&quot;Dev Journal documenting work on Markab&quot;&gt;
+&lt;title&gt;$title$&lt;/title&gt;
+&lt;link rel=&quot;preload&quot; href=&quot;/style.css&quot; as=&quot;style&quot;&gt;
+&lt;link href=&quot;/style.css&quot; rel=&quot;stylesheet&quot;&gt;&lt;/head&gt;&lt;body&gt;
+&lt;header&gt;&lt;a href=&quot;/&quot;&gt;Markab Dev Journal&lt;/a&gt;&lt;/header&gt;
+&lt;main&gt;
+&lt;h1&gt;$title$&lt;/h1&gt;
+$if(toc)$&lt;hr&gt;$toc$&lt;hr&gt;
+$endif$$body$
+&lt;/main&gt;&lt;footer&gt;
+Copyright (c) 2022 Sam Blenny
+ — License: &lt;a href=&quot;/LICENSE.txt&quot;&gt;CC-BY-NC-SA-4.0&lt;/a&gt;
+&lt;/footer&gt;&lt;/body&gt;&lt;/html&gt;
+</code></pre>
+<p>The <code>$title$</code>, <code>$toc$</code>, and <code>$body</code> are Pandoc <a href="https://pandoc.org/MANUAL.html#interpolated-variables">interpolated variables</a>, which
+it replaces when rendering the template. The <code>$title$</code> string comes from a YAML
+metadata block at the start of each markdown file. Pandoc generates <code>$toc$</code>
+with a table of contents ul element because I gave it the switch in the
+makefile to ask for that. The <code>$body$</code> string comes from the document fragment
+generated by converting a markdown file.</p>
+<p>The key parts of my Makefile look like this:</p>
+<pre><code>.SUFFIXES:
+.PHONY: all clean
+
+MD_FILES   = $(wildcard 20??-??-??*.md)
+HTML_FILES = $(MD_FILES:.md=.html)
+PD_TEMPLATE = pandoc_template.html
+PD_FMT = -f markdown+lists_without_preceding_blankline+autolink_bare_uris
+PD_OPT = --wrap=preserve --strip-comments
+
+all: $(HTML_FILES)
+    @echo done
+clean:
+    rm -f $(HTML_FILES)
+
+.SUFFIXES: .md .html
+.md.html:
+    pandoc $(PD_FMT) $(PD_OPT) --template=$(PD_TEMPLATE) -o $@ $&lt;</code></pre>
+<p>The makefile is perhaps a bit too clever. It might be less mysterious if I just
+wrote a shell script. To understand what’s going on, you need to read about GNU
+make’s wildcard globbing for variables and about make “inference rules” which
+are associated with <code>.SUFFIXES</code>.</p>
+<p>Anyhow, to convert a new markdown entry to html with pandoc, I run</p>
+<pre><code>make</code></pre>
+<p>To rebuild the whole set of journal entries when I want to change the template,
+I use <code>make clean</code> first and add a <code>-j</code> to do a parallel build:</p>
+<pre><code>make clean; make -j</code></pre>
+<p>For now, starting a new entry is manual, and updating the index is manual. I
+would like to add a make target to automatically generate a journal entry
+file. Same for automatically generating the index file.</p>
+<h2 id="css-notes">CSS Notes</h2>
+<p>These are good for getting list items aligned nicely:</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Learn/CSS/Styling_text/Styling_lists" class="uri">https://developer.mozilla.org/en-US/docs/Learn/CSS/Styling_text/Styling_lists</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/list-style" class="uri">https://developer.mozilla.org/en-US/docs/Web/CSS/list-style</a></li>
+</ul>
+<p>This is good for adjusting spacing between a bullet list directly under a
+paragraph (like this one right here):</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/Adjacent_sibling_combinator" class="uri">https://developer.mozilla.org/en-US/docs/Web/CSS/Adjacent_sibling_combinator</a></li>
+</ul>
+<h2 id="books-on-implementing-forth-systems">Books on implementing forth systems</h2>
+<p>IPS</p>
+<ul>
+<li>Meinzer, IPS: High Level Programming of Small Systems, University of Marburg, 1978</li>
+<li><a href="https://github.com/amsat-dl/IPS/blob/master/Documentation/IPS%20-%20The%20Book.pdf" class="uri">https://github.com/amsat-dl/IPS/blob/master/Documentation/IPS%20-%20The%20Book.pdf</a></li>
+<li><a href="https://amsat-dl.org/en/ips-high-level-programming-of-small-systems-for-the-amsat-space-projects/" class="uri">https://amsat-dl.org/en/ips-high-level-programming-of-small-systems-for-the-amsat-space-projects/</a></li>
+</ul>
+<p>Threaded Interpretive Languages</p>
+<ul>
+<li>Loeliger, Threaded Interpretive Languages: Their Design And Implementation, Byte Books, 1981</li>
+<li><a href="https://archive.org/details/R.G.LoeligerThreadedInterpretiveLanguagesTheirDesignAndImplementationByteBooks1981" class="uri">https://archive.org/details/R.G.LoeligerThreadedInterpretiveLanguagesTheirDesignAndImplementationByteBooks1981</a></li>
+</ul>
+<p>Stack Computers: The New Wave</p>
+<ul>
+<li>Koopman, Stack Computers: The New Wave, Mountain View Press, 1989</li>
+<li><a href="https://users.ece.cmu.edu/~koopman/stack_computers/index.html" class="uri">https://users.ece.cmu.edu/~koopman/stack_computers/index.html</a> (pdf &amp; html)</li>
+</ul>
+<p>Household Tales by Brothers Grimm (bonus book)</p>
+<ul>
+<li>The Project Gutenberg eBook of Household Tales by Brothers Grimm, by Jacob
+Grimm and Wilhelm Grimm</li>
+<li><a href="https://www.gutenberg.org/files/5314/5314-h/5314-h.htm#chap55" class="uri">https://www.gutenberg.org/files/5314/5314-h/5314-h.htm#chap55</a></li>
+<li>IPS uses “RUMPELSTILZCHEN” as a magic phrase to escape its limited input mode
+in a manner similar to typing the ESC key in vi’s insert mode.</li>
+</ul>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="/LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>

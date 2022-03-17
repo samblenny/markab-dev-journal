@@ -1,0 +1,221 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-16: Workspace layouts, refining priorities</title>
+<link rel="preload" href="/style.css" as="style">
+<link href="/style.css" rel="stylesheet"></head><body>
+<header><a href="/">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-16: Workspace layouts, refining priorities</h1>
+<hr><ul>
+<li><a href="#thinking-about-goals">Thinking about goals</a></li>
+<li><a href="#conclusions">Conclusions</a></li>
+<li><a href="#refining-priorities">Refining Priorities</a></li>
+</ul><hr>
+<h2 id="thinking-about-goals">Thinking about goals</h2>
+<p>Been thinking today on workspace layouts, data discs, and, to a lesser extent,
+on console layouts. More abstractly, been thinking on interrelationship of
+three goals for Markab.</p>
+<p>The three interrelated goals of today’s pondering:</p>
+<ol type="1">
+<li><p>Encouraging flow state and insulating creative process from unhelpful
+distractions. Prune UI cruft. Minimize screen space dedicated to controls
+that are not needed. Facilitate arranging of workspace for mood and
+productivity (coordination of wallpaper, music player, reference media,
+working windows, etc.).</p>
+<p>This implies a theming engine and perhaps scripted integration with the host
+OS desktop wallpaper, music player, window manager (dark mode), and such.
+Idea is to facilitate workspace equivalent of theatrical set and lighting
+change between acts of a play. Lights go down, set rolls off, set rolls on,
+lights come up in new configuration. Suddenly, like magic, you’re in a
+different place. Sitting down to work at computer could be that way.</p>
+<p>On large displays, it might be appropriate to have significant space
+dedicated to desktop wallpaper, reference images, and perhaps a skeuomorphic
+virtual computer console or desktop, enclosing the active display area of
+the tool windows. That might take the form of 3D renderings, or perhaps
+illustrations in different styles. Important question here is, what do you
+want to see on your workspace to help you get in the right mood and focus on
+making the thing you want to make?</p></li>
+<li><p>Facilitate productivity on available computers. Thinking here of priority on
+supporting older gear. But, still want to include people who may have
+recently purchased modern equipment. Mood is, meet people where they are.
+Encourage use of existing gear. Smooth and simplify process of getting
+started with surplus gear. Mitigate factors prompting purchase of newly
+manufactured gear.</p>
+<p>This implies a central focus on lightweight tools that will work on low
+resolution screen, but also the need to consider how to adapt those tools
+for use on modern workstations with high-resolution displays and fast CPUs.
+Need to plan for productivity across the continuum of having very little
+display space at low DPI, up to having too much high-DPI display space.</p></li>
+<li><p>Facilitate sharing of finished works and exploration of interactive
+experiences. For images and sound files, probably fine to rely on normal
+host OS image viewers and audio players. But, for interactive experiences
+like games or SRS language practice assistant, there needs to be a
+cross-platform runtime environment that is easy to install and run. Best
+option for this is probably web page with WASM module runtime player and
+convenient method for loading rom image files into the player.</p>
+<p>Important that the rom images, and resource files for the runtime player
+webpage, can be easily downloaded and served from localhost for offline use.
+This implies need for supporting a simple static-file HTTP server. HTTP
+server needs to be cross platform.</p></li>
+</ol>
+<p>When we make things on a computer, it is often necessary to use at least two
+windows: one for reference material (docs, images, code, whatever), and one for
+a document we are editing. Often we need many windows. Juggling windows, and
+being exposed to their design elements (menus, titlebar, corners, borders,
+tabs, tool palettes,…) affects mood and creative focus. Same applies to
+desktop wallpaper and music.</p>
+<p>Recently, unrelated to Markab, I created two scripts on my main computer which
+I can use to conveniently switch my desktop wallpaper and OS dark-mode feature
+between day and night configurations. Now, with a few keystrokes, I can adjust
+my workspace to be more comfortable according to ambient light in the room. My
+previous method required many clicks to navigate menus and control panels, all
+covered in branding and “design”. My new method lets me avoid that clutter.</p>
+<p>Using Markab should feel like that. It should let you quickly summon workspace
+configurations with the right mood to suit the project, computing device,
+ambient light in the room, and so on.</p>
+<h2 id="conclusions">Conclusions</h2>
+<p>Probably Markab should have features to help coordinate the appearance of the
+entire workspace on a display. For colors and themes, thinking about video
+modes on the emulated VM screens is too narrow of a focus. Scope of my goals
+includes the overall experience of using Markab to make stuff.</p>
+<p>Additional display coordination features could include:</p>
+<ul>
+<li>Wallpaper: change desktop wallpaper or browser tab background image</li>
+<li>Skins: change window border for VM screens, including Plan 9 style thick
+borders and possibly bezel images using
+<a href="https://en.wikipedia.org/wiki/9-slice_scaling">9-slice scaling</a></li>
+<li>References: display PNG or JPEG beside the VM screen(s) to use as reference
+images for drawing and painting</li>
+<li>Onion skinning: display PNG or JPEG under VM screen(s) with opacity controls
+to use for tracing or animation</li>
+</ul>
+<p>Also need to consider how to make a smooth experience for moving projects
+across devices with diferent display resolution and DPI-ratio combinations.</p>
+<p>Possible features for adapting to different display hardware:</p>
+<ul>
+<li>Zoom: 1x, 2x, 3x, etc. zoom control for integer ratio scaling of VM screens</li>
+<li>DPI detection: perhaps automatically select default zoom based on DPI-ratio</li>
+</ul>
+<p>Need to consider to what extent I want to support phone and tablet displays.
+For painting and drawing, having things work on an iPad might be pretty cool.</p>
+<h2 id="refining-priorities">Refining Priorities</h2>
+<p>Some of the things I was thinking in the past couple weeks seem less suitable
+now…</p>
+<ol type="1">
+<li><p>Building Markab to be compatible with ARM dev boards or small hardware
+displays seems less of a good idea. Supporting very small displays would
+interfere with optimizing for a nice cross-platform experience on computers
+with display size in the neighborhood of 720p or 1080p.</p></li>
+<li><p>Emulating 8-bit or 16-bit operations seems at odds with the goal of using
+limited battery power efficiently. Some people enjoy preserving and using
+historical hardware with 16-bit CPUs. I see that as a matter of taste. To
+me, reading about very old computers is interesting, but restoring them or
+relying on their proper functioning is not. Every target platform that I
+would consider potentially suitable for use with Markab has at least a
+32-bit CPU. Many have 64-bit.</p>
+<p>Markab is about seeking creative sanctuary away from waste, cruft, bitrot,
+intrusive branding, rent-seeking, overdesigned nonsense, and random
+failures. Sanctuary from waste is a broad concept including things like
+conserving power, conserving bandwidth, and being respectful of your own and
+other people’s time and emotional energy. The process of getting to that
+place of sanctuary includes activities that resemble some of what retro
+computing enthusiasts do. But, those two things are not the same! Markab is
+about setting up favorable conditions for productive creativity. The point
+is to be creating new work in a new context.</p>
+<p>Part of that idea of sanctuary, avoiding random failures, leads me to prefer
+used business class computers with medium-spec components and a manufacture
+date within the previous 10 years (relative to time of acquisition by gift,
+auction, or whatever). Beyond about 10 years, or with low-end consumer grade
+junk, or with high-spec performance workstations, problems are much more
+likely. Such systems tend to give more trouble with hardware failures,
+difficulty obtaining parts, and long-term availability of linux driver
+support.</p>
+<p>Comparing my ideas about hardware support to Devine’s ideas about hardware
+for Uxn and Varvara… As I understand it, Devine has a taste for designing
+to enable portability that extends back toward rather older hardware. They
+also mention interest in paper computing, and in using 64KB addressing
+limits as a creativity inspiring constraint. I also care about small program
+size, but my care is rooted in enthusiasm for building simple, reliable,
+efficient things that work reliably. For me, small binary size is mostly a
+side-effect of that process, rather than a goal on its own. The things I
+like to measure have more to do with performance, efficiency, and
+correctness of overall systems.</p>
+<p>As I understand it, Uxn’s design uses 8-bit instructions and a 16-bit
+address bus to facilitate easy porting, or from-scratch implementations, of
+the the stack machine CPU. This is meant to allow long-term preservation of
+code and portability across many platforms (I like these goals). The API and
+spec for application developers happen at the level of the CPU instruction
+set documentation, source for a C assembler, and source for a self-hosting
+assembler.</p>
+<p>For Markab, I intend to aim for similar ease of portability and long term
+bitrot resistance, but skip the step of emulating a virtual CPU. Instead, I
+want to implement a forth system, with its kernel written in C99, on top of
+a hardware abstraction layer (HAL). The HAL will isolate the Forth kernel
+from platform-specific driver details of display, audio, real time clock,
+timers, file IO, and such. Porting to a new platform should be limited to
+implementing HAL functions to make calls to suitable hardware IO libraries
+on the target platform.</p>
+<p>One big difference between my perspective, and Devine’s as I understand it,
+is that I’m perfectly content to forego building a self-hosting assembler. I
+feel comfortable basing my plans for portability and resilience on the
+assumption that somebody else will provide a good optimizing C compiler for
+any hardware platform worth porting to. Normally, in recent decades, that’s
+been how it works.</p>
+<p>Another difference is, I want to define my API spec for application
+developers at the level of built-in words for my forth system. The built-ins
+dictionary will cover basics like math operations and control flow, but it
+will also cover graphics, sound, and input devices. There will be words for
+things like sprite blitting and painting Unicode strings. Implementation of
+performance critical built-in words will happen in C99, so, for example,
+sprite blitting should happen at the speed of compiled C. Forth applications
+will run run slower than C because of the indirection of the threaded
+interpreter. But, overall, I expect the potential performance should be
+pretty good.</p></li>
+<li><p>On how small is small enough?… As far as I can tell, motivation for the
+goal of extremely tiny rom images seems to be mostly about taste and
+enjoyment of the intellectual challenge. I view shrinking binaries as a
+diminishing returns activity. Bloated is bad. Small has noteworthy practical
+advantages. But, going from small to tiny can require lots of hard work and
+awkward compromises. Maybe not worth it. My taste leans more toward color
+graphics, international fonts, and algorithms designed for 32-bit math
+operations. That stuff is easier to do efficiently if I allow for sometimes
+working with ram-resident data structures larger than 64KB.</p>
+<p>For my purposes, the main file size considerations are:</p>
+<ul>
+<li>Total size of project’s git repo after a few years of active development.
+If possible, I want this to be under 10MB so git clone runs fast</li>
+<li>Page load time for html wasm demo pages. I want this to be fast. Less than
+2 seconds on a typical cheap US broadband connection is nice.</li>
+</ul>
+<p>In that context, there is definite advantage to keeping the total page size
+for all resources well under 1MB. For page load time, there is not much
+noticeable difference between 4KB, 32KB, or 64KB. On the other hand, that
+size range gets more interesting when considering the cumulative effect of
+commits on git repo size.</p>
+<p>When I commit a new .wasm file, it goes into the git history as a binary
+blob, which is less efficient than committing a small diff to a text file.
+Supposing I average one release per week, with an average .wasm file size of
+4KB, that adds 52*4/1024 = 0.2MB per year to my git repo history.</p>
+<p>Increasing to file size of 32KB would add 1.6MB per year. That’s probably
+okay, but I wouldn’t want the rate to get much bigger. On the other hand, if
+bundled a 16px CJK Unicode font into the .wasm file, commit size would go up
+to about 1.5MB, adding about 78MB per year to the repo. That’s way too much.</p>
+<p>What I conclude from those estimates is, I’d be very happy if I could fit a
+HAL, forth kernel, and built-ins dictionary into a .wasm file of 16KB. Even
+32KB would be pretty good. Larger would be possible if necessary.</p>
+<p>Including a whole CJK Unicode font in the same binary as the HAL and forth
+kernel would be bad. Probably the thing to do is split the glyphs up into a
+set of smaller language pack rom files that could be loaded as libraries for
+use along side of application rom images. The language pack font roms would
+not need to be updated often, so their total long term contribution to git
+repo size might be on the order of 2MB or less.</p></li>
+</ol>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="/LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
