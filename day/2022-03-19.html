@@ -1,0 +1,94 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-19: Considering virtual CPU emulation</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-19: Considering virtual CPU emulation</h1>
+<hr><ul>
+<li><a href="#thinking-about-how-to-implement-forth">Thinking about how to implement Forth</a></li>
+<li><a href="#what-cpu-perhaps-rv32i-or-rv32ec">What CPU? Perhaps RV32I or RV32EC?</a></li>
+<li><a href="#new-script-for-creating-journal-entries">New script for creating journal entries</a></li>
+</ul><hr>
+<h2 id="thinking-about-how-to-implement-forth">Thinking about how to implement Forth</h2>
+<p>It’s been a while since read the Stack Computers and IPS books that I linked to
+in <a href="2022-03-17.html#books-on-implementing-forth-systems">2022-03-17.html</a>. Did
+a deep dive on a bunch of that stuff last year. But, forgot many of the
+details. For the last couple days I’ve been reviewing how to bootstrap Forth
+systems on new architectures. Also considering how I could approximate that
+with C compiled for wasm.</p>
+<p>Much of the old writing I’ve found with details on implementing a Forth system
+is from the 1980’s or the late 70’s. That stuff mainly covers bootstrapping an
+assembler and Forth compiler on 16-bit CPUs using machine language, I guess
+because that was the current hardware for hobbyists at the time.</p>
+<p>In <a href="2022-03-16.html#refining-priorities">2022-03-16.html</a>, I wrote about how I
+was thinking it would be better to skip the step of emulating a virtual CPU,
+and instead just implement Forth words in C.</p>
+<p>Upon further consideration, that idea has a big problem…</p>
+<p>The old books and articles that explain and demonstrate how to bootstrap a Forth
+system seem to always define some of the words in machine language. Sometimes
+there is also an intermediate assembler stage. Also, the means of implementing
+stacks and registers for good performance is specific to each CPU architecture.</p>
+<p>From reading alone, my understanding of the old Forth system bootstrapping
+explanations is very hazy. I can kinda follow along, but I don’t really get it.
+Seems like a situation where I need to actually work the examples.</p>
+<p>So, if I want to follow the old examples as closely as I can, I need to be
+working at the level of machine language. So, that implies I need an emulated
+CPU.</p>
+<p>My initial assumption was that emulating a CPU would be slow compared to just
+letting an optimizing C compiler do its thing on implementations of Forth
+built-in words that I could write in C. The trouble is, I don’t understand how
+a Forth kernel works well enough to create one from scratch that factors out
+the emulated-CPU parts.</p>
+<h2 id="what-cpu-perhaps-rv32i-or-rv32ec">What CPU? Perhaps RV32I or RV32EC?</h2>
+<p>If I do attempt to follow an old Forth system bootstrapping example, perhaps by
+porting an old FIG Forth implementation to some other CPU, then I will need to
+pick a target CPU. Which one?</p>
+<p>Performance in terms of work per Watt matters to me a lot more than nostalgia
+for old 8-bit or 16-bit computers. Some of the slower computers I work with
+have 32-bit CPUs. The faster ones are 64-bit. I feel pretty confident that
+targeting 32-bit integer math operations and a 32-bit address space will be a
+good choice for performance. That should reduce memory bus activity and avoid a
+lot of masks and shifts which would be needed to emulate 8-bit or 16-bit
+instructions.</p>
+<p>On the other hand, I like the idea of using a compressed instruction set. The
+idea of using an instruction encoding where some instructions use less than
+32-bits seems like a good idea. To summarize:</p>
+<ul>
+<li>32-bit instructions: Meh… could bloat rom images. Maybe compress?</li>
+<li>32-bit math operations: Yes, good. Definitely this.</li>
+<li>32-bit addressing: Yes, good. Definitely this. Matches wasm32.</li>
+</ul>
+<p>I’m wondering about maybe detouring away from WebAssembly for a while to try
+bootstrapping an old school forth system in RV32I or RV32EC machine language on
+top of QEMU. Perhaps that would be a good way to clarify my understanding of
+how Forth systems work without doing a deep dive on implementing a virtual CPU.</p>
+<p>Another possibility would be to look in the Stack Machines book for ideas on
+designing a 32-bit stack CPU instruction set. Not feeling great about that as a
+good use of time. Might be fun to try actually implementing in Verilog on an
+iCE40 though. Hmm…</p>
+<h2 id="new-script-for-creating-journal-entries">New script for creating journal entries</h2>
+<p>I wrote a shell script to automate my process for starting a new journal entry.
+Nothing super fancy about it. Mostly just automates what I’ve already been
+doing by hand. Did add one step with a <code>sed</code> filter to do YAML single quoted
+string escapes because I want to possible avoid trouble with special characters
+in the title strings (context is YAML metadata block parsing by Pandoc).</p>
+<p>Instead of using Python or Ruby like I might typically do, I decided to go with
+the <code>dash</code> shell (<code>/bin/sh</code> on Debian) for its POSIX compliance and ubiquity.
+My reasoning is that it would be nice if the script works on a variety of
+linux, BSD, and macOS systems with a minimum of extra stuff installed. If
+you’ve got a terminal, POSIX shell scripting should work. On the other hand,
+there may not be other scripting language interpreters installed. I also don’t
+want to rely on GNU bash extensions because, for example, macOS uses the <code>zsh</code>
+shell now.</p>
+<p>Script to make new journal entries is at <a href="new-entry.sh">new-entry.sh</a>.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="/LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
