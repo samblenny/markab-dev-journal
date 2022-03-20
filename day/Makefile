@@ -20,7 +20,9 @@ PD_OPT = --wrap=preserve --strip-comments -s --toc
 all: $(HTML_FILES) 404
 	@echo done
 
+# The sed line is a cludge to fix up the ../style.css and ../ links
 404: 404.html 404.md
+	sed -i 's/href="..\//href="\/markab-dev-journal\//g' 404.html
 	mv 404.html ../
 
 clean:
