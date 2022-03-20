@@ -6,7 +6,7 @@
 # This uses GNU make's wildcard extensions (not POSIX).
 #
 .SUFFIXES:             # Disable default old-school inference rules
-.PHONY: all clean
+.PHONY: all 404 clean
 
 MD_FILES   = $(wildcard 20??-??-??*.md)
 HTML_FILES = $(MD_FILES:.md=.html)
@@ -17,8 +17,11 @@ PD_OPT = --wrap=preserve --strip-comments -s --toc
 
 
 # This will trigger the .md.html inference rule
-all: $(HTML_FILES)
+all: $(HTML_FILES) 404
 	@echo done
+
+404: 404.html 404.md
+	mv 404.html ../
 
 clean:
 	rm -f $(HTML_FILES)
