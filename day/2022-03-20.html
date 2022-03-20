@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-20: Reading old Forth books</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-20: Reading old Forth books</h1>
+<hr><ul>
+<li><a href="#reading-goals">Reading Goals</a></li>
+<li><a href="#reading-list">Reading List</a></li>
+</ul><hr>
+<p>Before I write more code, I need to spend some time wrapping my head around
+how the old Forth systems actually worked.</p>
+<p>For file IO in particular, GForth and other ANS Forth systems have a weird
+hybrid of words for eldritch block IO and newer POSIX file IO. Part of the ANS
+standardization process involved breaking backward compatibility in various
+ways with the old FIG Forth era writings on implementation of Forth internals.
+It’s very confusing.</p>
+<p>I want to go back to the original FIG Forth era source materials and see if I
+can comprehend what the block editor experience was like, and how compilation,
+assembly, and interpretation were used in that context.</p>
+<h2 id="reading-goals">Reading Goals</h2>
+<ol type="1">
+<li><p>Understand, in specific detail, what the user interface was like in old
+Forth systems for editing and compiling Forth source code. I find lots of
+confusing references to things like <code>4 LOAD 5 LOAD 6 LOAD</code> as a means to
+load blocks… whatever “loading” means. I’m unclear about the relationship
+of loading, compiling, and disk IO in the context of blocks. I’m unclear
+about UI for switching between editing and running code.</p></li>
+<li><p>Understand the specific circumstances when compilation was typically used
+in old Forth systems, how it was implemented, and how the compiler gets
+invoked.</p></li>
+<li><p>Understand the meaning and usage of “assembling”, “compiling”, and
+“interpreting” in writing about old Forth systems. From what I’ve read, it
+seems like people using those terms to write about Forth meant something
+different than the meanings I’m used to in the context of modern languages
+like C, Python, Ruby, Go, Rust, and such.</p></li>
+</ol>
+<h2 id="reading-list">Reading List</h2>
+<p>Books</p>
+<ul>
+<li><a href="https://archive.org/details/R.G.LoeligerThreadedInterpretiveLanguagesTheirDesignAndImplementationByteBooks1981">Threaded Interpretive Languages</a></li>
+<li><a href="https://archive.org/details/stack_computers_book">Stack Computers: The New Wave</a></li>
+<li><a href="https://github.com/larsbrinkhoff/forth-documents/blob/master/fig-forth_PDP-11_Users_Guide.pdf">PDP-11 Forth Users Guide</a></li>
+</ul>
+<p>Scans of C64 and VIC-20 manuals</p>
+<ul>
+<li><a href="https://web.archive.org/web/20170919031724/http://www.bombjack.org/commodore/applications/FORTH_Language_for_the_C64.pdf">Forth Language</a> for the Commodore 64 with Graphics, Sound and Assembler</li>
+<li><a href="https://web.archive.org/web/20170919030736/http://www.bombjack.org/commodore/applications/Tiny_Forth.pdf">Tiny Forth</a> for the Commodore-64 or VIC-20</li>
+<li><a href="https://web.archive.org/web/20170919031327/http://www.bombjack.org/commodore/applications/White_Lightning_Manual.pdf">White Lightning</a> the High Level Graphics Development System for the
+Commodore 64</li>
+<li><a href="https://web.archive.org/web/20170919031249/http://www.bombjack.org/commodore/applications/VIC_Forth.pdf">VIC Forth</a> Instruction Manual</li>
+</ul>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="/LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
