@@ -1,0 +1,103 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-22: Forth screen editing</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-22: Forth screen editing</h1>
+<hr><ul>
+<li><a href="#status">Status</a></li>
+<li><a href="#impressions-of-screen-editing">Impressions of Screen Editing</a>
+<ul>
+<li><a href="#intriguing-points">Intriguing Points</a></li>
+<li><a href="#avoiding-trouble-with-anachronistic-cruft">Avoiding Trouble with Anachronistic Cruft</a></li>
+</ul></li>
+</ul><hr>
+<h2 id="status">Status</h2>
+<p>Currently reading through a bunch of Forth stuff and taking notes on paper.</p>
+<h2 id="impressions-of-screen-editing">Impressions of Screen Editing</h2>
+<p>The screen editor stuff I’m reading about from Fig-Forth systems is giving me
+mixed feelings. Some of it sounds very interesting to experiment with. Some of
+it sounds antiquated and unsuitable.</p>
+<h3 id="intriguing-points">Intriguing Points</h3>
+<ul>
+<li><p>Screen based editing with <code>LIST</code>, <code>LOAD</code>, <code>INDEX</code>, and such looks like a good
+way to organize code on a system where Forth is running on bare metal and you
+cannot, or don’t want to, rely on filesystem drivers or the typical POSIX
+file IO routines that come with a C standard library.</p></li>
+<li><p>The Ultratechnolgy blog has transcripts of Chuck Moore’s videotaped talks. In
+one, Chuck mentioned he was working on code in one big file. Chuck said he
+missed the old screen editing as a way of structuring his code. This aligns
+with my feeling that screen editing might be an interesting way to work.</p></li>
+<li><p>Having screens of a known, fixed, power of 2 length makes it possible to use
+very efficient access patterns for <code>LOAD</code>, <code>LIST</code>, and <code>INDEX</code>. Instead of
+parsing through a long file, or precalculating and caching index data
+structures, it’s possible to seek to predictable locations.</p></li>
+<li><p>The concept of using screen 0 for a “load screen” sounds pretty cool.</p></li>
+</ul>
+<h3 id="avoiding-trouble-with-anachronistic-cruft">Avoiding Trouble with Anachronistic Cruft</h3>
+<p>Some hardware constraints that motivated aspects of old Forth screen editor
+designs are no longer applicable on modern hardware. Also, old designs, while
+efficient in the era when Forth systems commonly ran on bare hardware, present
+compatibility problems if running on an OS with modern POSIX tools.</p>
+<ul>
+<li><p>The old convention of fixed size screens of 64 characters by 16 lines (1024
+bytes) was apparently motivated by two no-longer-valid assumptions: One,
+ASCII is a sufficient character encoding; Two, RAM is scarce enough that disk
+blocks will need to be regularly read into, and flushed out of, RAM buffers
+during editing and running of code.</p></li>
+<li><p>Old screen editing UIs from the Fig-Forth era seem to be mostly based on
+teletype-style line editors. Tiny Forth for C64 and VIC-20 had an interactive
+editor with cursor key navigation that sounded pretty reasonable. But, most
+of the other screen editor stuff I read about sounded intolerably primitive.
+Better than punchcards or toggle switches, I suppose, but that’s a low bar.</p></li>
+<li><p>Text in fixed length screens does not play nice with modern text editors
+which generally expect arbitrary numbers of characters per line, non-ASCII
+encoding formats, line-ending characters, and an arbitrary number of lines
+per file. If you open a screen file in a regular modern text editor, making
+changes could very easily corrupt the file.</p></li>
+<li><p>Screen encoded text does not play nice with the modern ecosystem of POSIX
+command line tools (git, grep, etc.) that expect text to follow UNIX text file
+conventions.</p></li>
+</ul>
+<p>Conclusions:</p>
+<ul>
+<li><p>Forth, approached with a Chuck Moore style mindset, exists in a world where
+POSIX, C calling conventions, and similar concerns are not things you need to
+worry about. Being able to import and export data in interoperable formats is
+important. But, inside the cm-style Forth system, it’s all about simplicity
+of the overall hardware and software implementation. And, simplicity, as
+Chuck Moore tells it, is largely about not dragging along unrelated cruft
+that creates complexity above and beyond the inherent complexity of the task
+at hand. Corollary: standards and libraries are usually bloated with cruft
+and should therefore be viewed with great suspicion.</p></li>
+<li><p>Experimenting with an emulated VM system that presents an interface from a
+similar mindspace, where POSIX and C were never requirements, sounds fun.</p></li>
+<li><p>Markab could have an editor with code structured in fixed size screens, but
+with modern-ish UI (vi/emacs/nano nav shortcuts) and support for Unicode. I
+want to experiment with what that feels like to code in. Maybe the editor
+could allow for UTF-8 and free-form line lengths within a screen, using
+normal line-ending sequences, but have a fixed size limit for the screen as a
+whole. There could be a remaining bytes indicator similar to remaining
+character indicators in SMS texting and micro-blogging apps.</p></li>
+<li><p>It would be cool to have a screen editor that could accommodate the concept
+that a screen might contain Unicode text, binary encoded numeric data tables,
+raster images, or audio samples.</p></li>
+<li><p>Markab could include a POSIX command line utility to pack and unpack
+resources, converting between a single Markab VM memory image and a directory
+of text, image, and sound files. The Markab VM could load a memory image file
+into its emulated address space at startup, then save changes back out to to
+disk as needed. The memory image files could be unpacked for committing to
+git or interoperating with text, image, and sound editors from the POSIX
+mindspace.</p></li>
+</ul>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="/LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
