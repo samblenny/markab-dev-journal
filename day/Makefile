@@ -17,7 +17,7 @@ PD_OPT = --wrap=preserve --strip-comments -s --toc
 
 
 # This will trigger the .md.html inference rule
-all: $(HTML_FILES) 404
+all: $(HTML_FILES)
 	@echo done
 
 # The sed line is a cludge to fix up the ../style.css and ../ links
