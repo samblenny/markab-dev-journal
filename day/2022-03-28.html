@@ -1,0 +1,384 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-28: Optimizing X11 + i3 + urxvt</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-28: Optimizing X11 + i3 + urxvt</h1>
+<hr><ul>
+<li><a href="#context">Context</a></li>
+<li><a href="#reducing-ram-use-of-debian-on-x86-thin-client">Reducing RAM use of Debian on x86 thin client</a>
+<ul>
+<li><a href="#switching-from-konsole-to-urxvt">Switching from konsole to urxvt</a></li>
+<li><a href="#method-to-analyze-memory-use-with-top">Method to analyze memory use with top</a></li>
+<li><a href="#removing-unused-services-round-1">Removing unused services, round 1</a></li>
+<li><a href="#resulting-memory-usage">Resulting memory usage</a></li>
+<li><a href="#removing-unused-services-round-2">Removing unused services, round 2</a></li>
+</ul></li>
+<li><a href="#making-urxvt-less-ugly">Making urxvt less ugly</a></li>
+<li><a href="#testing-urxvt-terminal-colors">Testing urxvt terminal colors</a></li>
+<li><a href="#links-for-x-bitmap-font-stuff">Links for X bitmap font stuff</a></li>
+<li><a href="#attempting-to-take-screenshots-with-prtsc-key-inside-vnc">Attempting to take screenshots with PrtSc key inside VNC</a></li>
+<li><a href="#x.org-keyboard-config-notes">X.org keyboard config notes</a></li>
+</ul><hr>
+<h2 id="context">Context</h2>
+<p>My current plan is to implement three functionally equivalent Forth cores in
+x86 assembly, ARM assembly, and WASM. The system will use a small set of core
+Forth words as the instruction set for a virtual computer. The rest of the
+system’s functionality will be implemented in cross-platform Forth.</p>
+<p>I want to support three target platforms:</p>
+<ol type="1">
+<li>Linux + X11 graphics on ARM (e.g. Pi Zero with 512MB RAM + ARM A53)</li>
+<li>Linux + X11 graphics on x86 (e.g. thin client with 2GB RAM + Intel Atom)</li>
+<li>Wasm32 + Javascript Canvas graphics (e.g. Chrome on a modern Mac or PC)</li>
+</ol>
+<p>For the last few days, I’ve been reading about assembly language and working
+on setting up a low memory x86 Debian configuration with X11, i3, and uxrvt.</p>
+<p>The Debian system is a thin client with 2GB of RAM and an Intel Atom CPU, but I
+am configuring it to use less than 512MB of RAM for system services, X11, i3,
+and user applications. This process is aiming for two objectives:</p>
+<ol type="1">
+<li><p>Find a configuration that should work well on very limited ARM systems such
+as the Raspberry Pi Zero W, or 3 A+, with 512MB of RAM</p></li>
+<li><p>Find a configuration that works well over TigerVNC with the thin client</p></li>
+</ol>
+<h2 id="reducing-ram-use-of-debian-on-x86-thin-client">Reducing RAM use of Debian on x86 thin client</h2>
+<p>The thin client I’m using as my Linux x86 development machine started off last
+year as a KDE-Plasma desktop configuration with a monitor, but now I’m running
+it headless with TigerVNC over SSH.</p>
+<p>Along the way while setting up i3 and TigerVNC, I’m zapping packages that seem
+to be using lots of memory with little benefit. Much of the stuff I’m removing
+came from desktop-base and the KDE Plasma.</p>
+<h3 id="switching-from-konsole-to-urxvt">Switching from konsole to urxvt</h3>
+<p>The combination of Debian’s alternatives system and i3’s method of
+automatically locating an installed terminal emulator made it a little tricky
+to understand which terminal emulator i3 would pick.</p>
+<p>This is the process I followed to peel away fancy terminal emulators until i3’s
+selected <code>uxrvt</code> for its terminal emulator:</p>
+<ol type="1">
+<li><code>ps axjf</code> to find i3’s <code>$mod+Enter</code> terminal: <code>x-terminal-emulator</code></li>
+<li>Use <code>ls</code> to race chain of symlinks starting with <code>x-terminal-emulator</code></li>
+<li><code>apt remove konsole termit</code></li>
+<li>Finally end up with <code>urxvt</code> which was already installed. It loads super fast
+and uses a bitmap font, but theme is black text on white background with
+ugly scrollbar.</li>
+</ol>
+<p>This is an edited console log from following that process:</p>
+<pre><code>$ # Locate process for i3&#39;s $mod+Enter terminal...
+$ ps axjf
+...
+... /bin/sh -c i3-sensible-terminal
+...  \_ x-terminal-emulator
+...      \_ /bin/bash
+$ # determine what the command for process is...
+$ file `which x-terminal-emulator`
+/usr/bin/x-terminal-emulator: symbolic link to /etc/alternatives/x-terminal-emulator
+$ # This is after having removed konsole, so now culprit is termit
+$ file /etc/alternatives/x-terminal-emulator
+/etc/alternatives/x-terminal-emulator: symbolic link to /usr/bin/termit</code></pre>
+<h3 id="method-to-analyze-memory-use-with-top">Method to analyze memory use with top</h3>
+<ol type="1">
+<li>Start <code>top</code> from ssh shell</li>
+<li>Type <code>?</code> to view top’s built in help, <code>q</code> to exit help</li>
+<li>Type <code>f</code> to edit fields (up/dn: navigate, space: select, <code>s</code>: pick sort,
+<code>q</code>: finish)</li>
+<li>Select fields: <code>RES</code> (set this as sort with <code>s</code>) and <code>COMMAND</code></li>
+<li>Leave field select screen with <code>q</code></li>
+<li>On main screen, type <code>t</code>, <code>t</code>, <code>t</code> to turn off the CPU usage summary lines
+and <code>l</code> (lowercase L) to turn off the load average lines. The summary should
+now just indicate memory usage.</li>
+<li>Look for highest values in <code>RES</code> (Resident size) field, then do an <code>apropos</code>
+from another shell to look up contents of <code>COMMAND</code> field (try to figure out
+which service the process came from).</li>
+<li>Use <code>apt search</code> and <code>apt show</code> to figure out what the service with the high
+resident memory process is for.</li>
+<li>Decide if service is useful or if it can be removed</li>
+</ol>
+<p>Example of figuring out what high memory process</p>
+<pre><code>$ # COMMAND field of top contained &quot;ModemManager&quot;
+$ apropos ModemManager
+mmcli (1)            - Control and monitor the ModemManager
+ModemManager (8)     - mobile broadband modem management daemon
+$ apt search ModemManager | grep installed
+modemmanager/stable,now 1.14.12-0.2 amd64 [installed,automatic]
+$ apt show modemmanager
+...</code></pre>
+<h3 id="removing-unused-services-round-1">Removing unused services, round 1</h3>
+<p>These are things that I removed in the process of ad-hoc switching from
+KDE-Plasma with GUI login to i3 over VNC with SSH login.</p>
+<pre><code>sudo apt remove geoclue-2.0 libgeoclue-2-0 gir1.2-geoclue-2.0
+sudo apt remove packagekit ibus sddm plasma-desktop modemmanager
+sudo apt remove konsole termit
+sudo apt autoremove
+# make sure urxvt is installed
+sudo apt install rxvt-unicode</code></pre>
+<h3 id="resulting-memory-usage">Resulting memory usage</h3>
+<p>After I did all the <code>sudo apt remove ...</code> stuff mentioned above, I rebooted
+and set up a workspace with:</p>
+<ul>
+<li>Two active SSH sessions</li>
+<li>Emacs open in one of the SSH shells to edit this file</li>
+<li>VNC connection to X with i3 and one open terminal window (konsole)</li>
+</ul>
+<p>The resulting 10 highest memory using processes from <code>top</code> were:</p>
+<pre><code>   RES COMMAND
+ 63640 Xtigervnc
+ 29920 i3
+ 25372 emacs
+ 17308 NetworkManager
+ 16436 udisksd
+ 16288 pulseaudio
+ 15216 x-terminal-emul
+ 10736 systemd
+ 10504 tigervncserver
+  9680 gsettings-helpe</code></pre>
+<p>And free memory looked like this (268 MiB):</p>
+<pre><code>$ free -h
+         total       used       free      shared  buff/cache   available
+Mem:     1.9Gi      268Mi      811Mi        20Mi       815Mi       1.4Gi
+Swap:    975Mi         0B      975Mi</code></pre>
+<h3 id="removing-unused-services-round-2">Removing unused services, round 2</h3>
+<p>After Debian 11.3 came out this past week, my thin client wanted to install
+cups, and sane-utils. I let it finish the upgrade, then did another round
+of memory trimming:</p>
+<pre><code>sudo apt update &amp;&amp; sudo apt upgrade
+sudo apt remove cups sane-utils
+sudo apt autoremove
+apt search kde | grep install
+sudo apt remove desktop-base
+# I need these to compensate for automatic installs by desktop-base:
+sudo apt install x11-apps x11-session-utils xinit xorg xbitmaps iw
+apt search kde | grep install | grep -v automatic
+sudo apt remove kde-spectacle kwrite khelpcenter
+sudo apt remove kwin-x11 konqueror konq-plugins kfind keditbookmarks kcalc
+sudo apt autoremove</code></pre>
+<p>Resulting memory use with 2 ssh shells, emacs, TigerVNC, i3, and urxvt (258 MB
+as checked with <code>top</code>):</p>
+<pre><code>MiB Mem :   1895.4 total,    790.3 free,    257.5 used,    847.5 buff/cache
+MiB Swap:    976.0 total,    976.0 free,      0.0 used.   1468.8 avail Mem
+
+   RES COMMAND
+ 60692 Xtigervnc
+ 29980 i3
+ 24200 emacs
+ 18828 x-terminal-emul
+ 17612 NetworkManager
+ 16272 pulseaudio
+ 14476 udisksd
+ 10656 systemd
+ 10428 tigervncserver
+  9536 wpa_supplicant
+  ...  ...</code></pre>
+<h2 id="making-urxvt-less-ugly">Making urxvt less ugly</h2>
+<p>By default, the <code>urxvt</code> terminal emulator comes up with an ugly scrollbar,
+colors not to my liking, an ugly anti-aliased font, and a weird ISO4755 Unicode
+character entry popup thing mapped to Ctrl-Shift.</p>
+<p>Configuring <code>urxvt</code> to improve all that stuff requires setting options in
+<code>~/.Xresources</code> as <code>urxvt</code> does not have its own configuration file.</p>
+<p>This is what I came up with for <code>~/.Xresources</code>:</p>
+<pre><code>! To reload this file while X is running, do:
+!  `xrdb -display :1 -load .Xresources`
+
+! Fonts
+URxvt.font: -*-fixed-medium-r-normal--18-*-iso10646-*,-*-fixed-*-ja-18-*-iso10646-*
+URxvt.boldFont: -*-fixed-bold-r-normal--18-*-iso10646-*,-*-fixed-*-ja-18-*-iso10646-*
+URxvt.italicFont: -*-fixed-medium-o-normal--18-*-iso10646-*,-*-fixed-*-ja-18-*-iso10646-*
+URxvt.boldItalicFont: -*-fixed-*-*-normal--18-*-iso10646-*,-*-fixed-*-ja-18-*-iso10646-*
+URxvt.lineSpace: 1
+
+! Window edges
+URxvt.scrollBar: false
+URxvt.internalBorder: 10
+
+! Hide pointer during typing
+URxvt.pointerBlank: true
+
+! Disable ctrl-shift unicode input popup
+URxvt.iso14755: false
+URxvt.iso14755_52: false
+
+! Configure Ctrl-Shift-c and Ctrl-Shift-v for copy and paste
+! This does not work properly. It manages to get the selection synced
+! with the clipboard, but C-S-c and C-S-v do not work.
+URxvt.perl-ext-common: default,clipboard,selection-to-clipboard
+URxvt.keysym.C-S-c: perl:clipboard:copy
+URxvt.keysym.C-S-v: perl:clipboard:paste
+
+! Colors
+! If this looks weird, things to check:
+! 1. Do you have `$depth = &quot;24&quot;;` in `~/.vnc/tigervnc.conf`? If you have it set
+!    for &quot;16&quot;, the colors below will not be accurate
+! 2. What is going on with `PS1=...` in .bashrc?
+! 3. What is going on with `dircolors` in .bashrc (for setting LS_COLORS)? See
+!    `man dircolors` and `man dir_colors` (not the same thing) for info on how
+!    the LS_COLORS colors control `ls` output.
+! 4. IMPORTANT: DO NOT PUT COMMENTS ON SAME LINE AS COLOR CONSTANTS
+URxvt.depth: 24
+URxvt.background: #000000
+URxvt.foreground: #e8e8e8
+URxvt.cursorColor: #872f2d
+! normal colors
+! 0=black, 1=red, 2=green, 3=yellow, 4=blue, 5=magenta, 6=cyan, 7=white
+URxvt.color0: #000000
+URxvt.color1: #9d1641
+URxvt.color2: #72a703
+URxvt.color3: #aaa550
+URxvt.color4: #3d7fef
+URxvt.color5: #7756b3
+URxvt.color6: #44a1b5
+URxvt.color7: #c0c0c0
+! Brighter versions of colors 0..7
+URxvt.color8: #74705d
+URxvt.color9: #f9266f
+URxvt.color10: #9de32c
+URxvt.color11: #e3db74
+URxvt.color12: #50abf0
+URxvt.color13: #ae81fe
+URxvt.color14: #66d9ef
+URxvt.color15: #e6e6e6</code></pre>
+<h2 id="testing-urxvt-terminal-colors">Testing urxvt terminal colors</h2>
+<p>The <code>colortest</code> and <code>nyancat</code> packages are useful for testing if the
+<code>~/.Xresources</code> color configurations look good:</p>
+<pre><code>sudo apt install colortest nyancat
+colortest-8
+colortest-16
+colortest-16b
+colortest-256
+nyancat</code></pre>
+<h2 id="links-for-x-bitmap-font-stuff">Links for X bitmap font stuff</h2>
+<p>X Logical Font Description (XLFD)</p>
+<ul>
+<li>Designed for bitmap fonts (got vector support later)</li>
+<li>No support for anti-aliasing</li>
+<li><a href="https://wiki.archlinux.org/title/X_Logical_Font_Description" class="uri">https://wiki.archlinux.org/title/X_Logical_Font_Description</a></li>
+<li><a href="https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/XLFD/xlfd.html" class="uri">https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/XLFD/xlfd.html</a></li>
+<li><a href="https://en.wikipedia.org/wiki/X_logical_font_description" class="uri">https://en.wikipedia.org/wiki/X_logical_font_description</a></li>
+<li>Fontconfig is modern replacement: <a href="https://en.wikipedia.org/wiki/Fontconfig" class="uri">https://en.wikipedia.org/wiki/Fontconfig</a></li>
+</ul>
+<p>xfontsel</p>
+<ul>
+<li>Invoke as <code>DISPLAY=:1 xfontsel -print</code> from ssh to launch in i3 and print
+selected XLFD string to ssh terminal after quitting xfontsel</li>
+<li><code>helvetica</code>, <code>lucida</code>, and <code>fixed</code> all look pretty good</li>
+<li><code>iso10646</code> is useful to filter for fonts with better Unicode support</li>
+</ul>
+<p>xlsfonts</p>
+<ul>
+<li>Useful in combination with xfontsel</li>
+<li><code>xlsfonts</code> lists full XLFD string for fonts matching specified <code>-fn ...</code>
+pattern</li>
+</ul>
+<p>‘fixed’ typeface</p>
+<ul>
+<li>Looks good, part of X, public domain, good glyph coverage for Unicode BMP</li>
+<li><a href="https://en.wikipedia.org/wiki/Fixed_(typeface)" class="uri">https://en.wikipedia.org/wiki/Fixed_(typeface)</a></li>
+<li><a href="https://www.cl.cam.ac.uk/~mgk25/ucs-fonts.html" class="uri">https://www.cl.cam.ac.uk/~mgk25/ucs-fonts.html</a> (announce iso10646 for x fixed)</li>
+</ul>
+<h2 id="attempting-to-take-screenshots-with-prtsc-key-inside-vnc">Attempting to take screenshots with PrtSc key inside VNC</h2>
+<p>Check what happens if I try to press PrtSc key on macOS tenkeyless keyboard</p>
+<pre><code>$ xev -display :1 -event keyboard
+...
+KeyPress event, ...
+    root ...,
+    ..., keycode 253 (keysym 0xffca, F13), ...,
+...</code></pre>
+<p>Turns out it’s mapping as F13</p>
+<p>Check current mappings on X11 side:</p>
+<pre><code>$ xmodmap -display :1 -pke
+...
+keycode  37 = Control_L NoSymbol Control_L
+keycode  50 = Shift_L NoSymbol Shift_L
+keycode  53 = x X x X
+keycode  62 = Shift_R NoSymbol Shift_R
+keycode  64 = Alt_L Meta_L Alt_L Meta_L
+keycode  65 = space NoSymbol space
+keycode  76 = F10 F10 F10 F10 F10 F10 XF86Switch_VT_10
+keycode 107 = Print Sys_Req Print Sys_Req
+keycode 108 = Alt_R Meta_R Alt_R Meta_R
+keycode 133 = Super_L NoSymbol Super_L
+keycode 134 = Super_R NoSymbol Super_R
+keycode 135 = Menu NoSymbol Menu
+keycode 147 = XF86MenuKB NoSymbol XF86MenuKB
+keycode 150 = XF86Sleep NoSymbol XF86Sleep
+keycode 151 = XF86WakeUp NoSymbol XF86WakeUp
+keycode 169 = XF86Eject NoSymbol XF86Eject
+keycode 170 = XF86Eject XF86Eject XF86Eject XF86Eject
+keycode 171 = XF86AudioNext NoSymbol XF86AudioNext
+keycode 172 = XF86AudioPlay XF86AudioPause XF86AudioPlay XF86AudioPause
+keycode 173 = XF86AudioPrev NoSymbol XF86AudioPrev
+keycode 204 = NoSymbol Alt_L NoSymbol Alt_L
+keycode 205 = NoSymbol Meta_L NoSymbol Meta_L
+keycode 206 = NoSymbol Super_L NoSymbol Super_L
+keycode 207 = NoSymbol Hyper_L NoSymbol Hyper_L
+keycode 232 = XF86MonBrightnessDown NoSymbol XF86MonBrightnessDown
+keycode 233 = XF86MonBrightnessUp NoSymbol XF86MonBrightnessUp
+keycode 236 = XF86KbdLightOnOff NoSymbol XF86KbdLightOnOff
+keycode 237 = XF86KbdBrightnessDown NoSymbol XF86KbdBrightnessDown
+keycode 238 = XF86KbdBrightnessUp NoSymbol XF86KbdBrightnessUp
+keycode 253 = F13 NoSymbol F13</code></pre>
+<p>Check modkey mappings</p>
+<pre><code>$ xmodmap -display :1
+xmodmap:  up to 4 keys per modifier, (keycodes in parentheses):
+shift       Shift_L (0x32),  Shift_R (0x3e)
+lock        Caps_Lock (0x42)
+control     Control_L (0x25),  Control_R (0x69)
+mod1        Alt_L (0x40),  Alt_R (0x6c),  Meta_L (0xcd)
+mod2        Num_Lock (0x4d)
+mod3
+mod4        Super_L (0x85),  Super_R (0x86),  Super_L (0xce),  Hyper_L (0xcf)
+mod5        ISO_Level3_Shift (0x5c),  Mode_switch (0xcb)</code></pre>
+<p>Check keycodes for modkeys</p>
+<pre><code>$ xev -display :1 -event keyboard | grep keycode
+# Ctrl [dn/up], L side
+    state 0x2, keycode 37 (keysym 0xffe3, Control_L), same_screen YES,
+    state 0x6, keycode 37 (keysym 0xffe3, Control_L), same_screen YES,
+# Win [dn], L side (configured as option on macOS)
+    state 0x2, keycode 50 (keysym 0xffe1, Shift_L), same_screen YES,
+    state 0x3, keycode 64 (keysym 0xffe7, Meta_L), same_screen YES,
+    state 0xb, keycode 50 (keysym 0xffe1, Shift_L), same_screen YES,
+# Win [up], L side
+    state 0xa, keycode 64 (keysym 0xffe9, Alt_L), same_screen YES,
+# Alt [dn/up], L side (configured as command on macOS)
+    state 0x2, keycode 64 (keysym 0xffe9, Alt_L), same_screen YES,
+    state 0xa, keycode 64 (keysym 0xffe9, Alt_L), same_screen YES,
+# Shift [dn/up], L side
+    state 0x2, keycode 50 (keysym 0xffe1, Shift_L), same_screen YES,
+    state 0x3, keycode 50 (keysym 0xffe1, Shift_L), same_screen YES,
+# Alt [dn/up], R side
+    state 0x2, keycode 64 (keysym 0xffe9, Alt_L), same_screen YES,
+    state 0xa, keycode 64 (keysym 0xffe9, Alt_L), same_screen YES,
+# Menu [dn/up], R side
+    request MappingKeyboard, first_keycode 252, count 1
+    request MappingKeyboard, first_keycode 252, count 1
+    state 0x2, keycode 252 (keysym 0x10, (no name)), same_screen YES,
+    [&#39;state...&#39; repeats rapidly]</code></pre>
+<p>Try again with keycodes from mac extended keyboard w/o caps/ctrl swap</p>
+<pre><code>$ xev -display :1 -event keyboard | grep -o &#39;Press\|Release\|keycode.*)&#39;</code></pre>
+<h2 id="x.org-keyboard-config-notes">X.org keyboard config notes</h2>
+<p>I tried <code>xkeycaps</code>. It looks kinda cool with nice visual keyboard layouts,
+but it’s list of keyboard types seems to be hardcoded and very old. Does
+not seem to match <code>/usr/share/X11/xkb/rules/xorg.lst</code>.</p>
+<p>X.org keyboard and layout options</p>
+<ul>
+<li><p>List of all possibilities: <code>/usr/share/X11/xkb/rules/xorg.lst</code></p></li>
+<li><p>Interesting keyboard types: apple, apple_laptop, applealu_ansi, applealu_iso,
+chromebook</p></li>
+<li><p>Interesting options</p>
+<pre><code>ctrl:nocaps      # Caps Lock as Ctrl
+caps:escape      # Make Caps Lock an additional Esc
+caps:super       # Make Caps Lock an additional Super
+caps:hyper       # Make Caps Lock an additional Hyper
+caps:menu        # Make Caps Lock an additional Menu key
+altwin           # Alt/Win key behavior
+apple:alupckeys  # Apple Aluminium: emulate PC keys (PrtSc, Scroll Lock, Pause, Num Lock)</code></pre></li>
+</ul>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
