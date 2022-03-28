@@ -34,9 +34,9 @@ Forth words as the instruction set for a virtual computer. The rest of the
 system’s functionality will be implemented in cross-platform Forth.</p>
 <p>I want to support three target platforms:</p>
 <ol type="1">
-<li>Linux + X11 graphics on ARM (e.g. Pi Zero with 512MB RAM + ARM A53)</li>
-<li>Linux + X11 graphics on x86 (e.g. thin client with 2GB RAM + Intel Atom)</li>
-<li>Wasm32 + Javascript Canvas graphics (e.g. Chrome on a modern Mac or PC)</li>
+<li><p>Linux + X11 graphics on ARM (e.g. Pi Zero with 512MB RAM + ARM A53)</p></li>
+<li><p>Linux + X11 graphics on x86 (e.g. thin client with 2GB RAM + Intel Atom)</p></li>
+<li><p>Wasm32 + Javascript Canvas graphics (e.g. Chrome on a modern Mac or PC)</p></li>
 </ol>
 <p>For the last few days, I’ve been reading about assembly language and working
 on setting up a low memory x86 Debian configuration with X11, i3, and uxrvt.</p>
@@ -288,7 +288,7 @@ KeyPress event, ...
     root ...,
     ..., keycode 253 (keysym 0xffca, F13), ...,
 ...</code></pre>
-<p>Turns out it’s mapping as F13</p>
+<p>Turns out my PrtSc key is mapping as F13</p>
 <p>Check current mappings on X11 side:</p>
 <pre><code>$ xmodmap -display :1 -pke
 ...
@@ -362,7 +362,7 @@ mod5        ISO_Level3_Shift (0x5c),  Mode_switch (0xcb)</code></pre>
 <pre><code>$ xev -display :1 -event keyboard | grep -o &#39;Press\|Release\|keycode.*)&#39;</code></pre>
 <h2 id="x.org-keyboard-config-notes">X.org keyboard config notes</h2>
 <p>I tried <code>xkeycaps</code>. It looks kinda cool with nice visual keyboard layouts,
-but it’s list of keyboard types seems to be hardcoded and very old. Does
+but its list of keyboard types seems to be hardcoded and very old. Does
 not seem to match <code>/usr/share/X11/xkb/rules/xorg.lst</code>.</p>
 <p>X.org keyboard and layout options</p>
 <ul>
