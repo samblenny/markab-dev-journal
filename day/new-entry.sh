@@ -66,11 +66,16 @@ SPDX-License-Identifier: CC-BY-NC-SA-4.0
 title: '${ENTRY_PREFIX}: ${ENTRY_TITLE}'
 ---
 
-<!--
-link for index (delete this comment once link is added to index.html)
-<p><a href="day/${ENTRY_PREFIX}.html">${ENTRY_PREFIX}</a> — ${ENTRY_TITLE}</p>
--->
 ## [first subheading]
+HEREDOC
+)
+# ==========================================================================
+
+
+# This is the link template for inserting into the index
+# ==========================================================================
+INDEX_TEMPLATE=$(cat <<HEREDOC
+<p><a href="day/${ENTRY_PREFIX}.html">${ENTRY_PREFIX}</a> — ${ENTRY_TITLE}</p>
 HEREDOC
 )
 # ==========================================================================
@@ -80,3 +85,6 @@ echo "Creating $ENTRY_FILE from template..."
 cat <<EOF >> $ENTRY_FILE
 ${ENTRY_TEMPLATE}
 EOF
+
+echo "Updating index..."
+sed -i "/<!--MARKER-->/ a ${INDEX_TEMPLATE}" ../index.html
