@@ -1,0 +1,56 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-03-29: MacForth + FIG GEnie mirror</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-03-29: MacForth + FIG GEnie mirror</h1>
+<hr><ul>
+<li><a href="#macforth-in-evolution-of-forth">MacForth in Evolution of Forth</a></li>
+<li><a href="#macforth-manual-and-article-scans-on-archive.org">MacForth manual and article scans on archive.org</a></li>
+<li><a href="#fig-genie-archive-with-forth-source">FIG GEnie archive with Forth source</a>
+<ul>
+<li><a href="#unpacking-old-macintosh-archives">Unpacking old Macintosh archives</a></li>
+</ul></li>
+</ul><hr>
+<h2 id="macforth-in-evolution-of-forth">MacForth in Evolution of Forth</h2>
+<p>While reading a pdf scan of “<a href="https://github.com/larsbrinkhoff/forth-documents/blob/master/Evolution.pdf">The Evolution of Forth</a>”, on page 18 (marked as
+p642 in the original), I found a reference to MacForth as <em>“the first resident<em>
+</em>development system for the 128K Apple Macintosh, immediately after the Mac’s<em>
+</em>debut in January 1984”</em>. Apparently MacForth provided full access to all the
+graphics routines in the Mac’s built-in Toolbox ROM.</p>
+<p>The article further explains that lots of early Mac software was written in
+MacForth. So, I wondered, could I find any source code or documentation?</p>
+<h2 id="macforth-manual-and-article-scans-on-archive.org">MacForth manual and article scans on archive.org</h2>
+<p>I found these scans on archive.org:</p>
+<ul>
+<li><p><a href="https://archive.org/details/bitsavers_creativeSo4_10001850/mode/1up">MacForth manual</a>, spiral bound from June 1984</p></li>
+<li><p><a href="https://archive.org/details/MacWorld_8411_November_1984/page/n69/mode/1up">MacWorld 8411 November 1984</a> article about MacForth</p></li>
+</ul>
+<h2 id="fig-genie-archive-with-forth-source">FIG GEnie archive with Forth source</h2>
+<p>I found this web mirror of an ftp mirror of a FIG filesharing area on the
+<a href="https://en.wikipedia.org/wiki/GEnie">GEnie</a> dialup service from way back in the day:</p>
+<p><a href="https://www.complang.tuwien.ac.at/forth/ftp.dei.isep.ipp.pt/pub/forth/" class="uri">https://www.complang.tuwien.ac.at/forth/ftp.dei.isep.ipp.pt/pub/forth/</a></p>
+<p>There is a subdirectory specifically for Mac, which has a number of .ARC and .sit.hqx
+archive files containing Forth source code:</p>
+<p><a href="https://www.complang.tuwien.ac.at/forth/ftp.dei.isep.ipp.pt/pub/forth/mac/" class="uri">https://www.complang.tuwien.ac.at/forth/ftp.dei.isep.ipp.pt/pub/forth/mac/</a></p>
+<h3 id="unpacking-old-macintosh-archives">Unpacking old Macintosh archives</h3>
+<p>This is what I came up with for unpacking the archive files on Ubuntu:</p>
+<pre><code>sudo apt install nomarch macutils unar
+man nomarch
+man hexbin
+man unar
+man lsar
+nomarch whatever.arc
+hexbin -3 whatever.hqx
+unar whatever.sit.hqx</code></pre>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
