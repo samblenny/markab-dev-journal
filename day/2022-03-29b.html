@@ -29,21 +29,28 @@ comfortable recommending his books to anyone, so this was welcome news.</p>
 chapters end with a summary of key points, but do not include exercises.</p>
 <p>In related searching, I also found <a href="https://archive.org/details/mastering-forth-by-anderson-anita-tracy-martin-z-lib.org/mode/1up">Mastering Forth</a> by Martin Tracy and Anita
 Anderson (1989). Mastering Forth covers Forth 83 in an introductory textbook
-format with end of chapter exercise problems and solutions at the back of the
-book.</p>
+format with end of chapter exercise problems. Back of the book has solutions to
+the problems, which is nice.</p>
 <h3 id="discover-forth">Discover Forth</h3>
 <p>I started reading Discover Forth and have skimmed through the whole thing. It’s
 pretty good. Hogan writes clearly, gets to the point, and refreshingly focuses
 on explaining how a Forth System fits together as a whole. I would feel good
 about recommending this to people as an intro to Forth book.</p>
 <p>One of the things I’m trying to get clear in my mind at the moment is, what is
-the basic anatomy of a minimal Forth System? The proponents of ANS Forth won
-their struggle back in the day, but the results they came up with are of no use
-too me. Complicated and crufty. Absolutely not minimal.</p>
-<p>For example, I want to understand specifically what data structures could be
-used to implement a minimal dictionary, data and return stacks, assembler,
-compiler, metacompiler, inner interpreter, and outer interpreter? Also, what
-set of words is necessary to form the “nucleus” or “kernel” of a Forth System?</p>
+the basic anatomy of a minimal Forth System?</p>
+<p>The proponents of ANS Forth won their struggle back in the 90’s, but the
+results they came up with are useless to me. ANS is a crufty and very complex.
+Much of the stuff written about Forth since ANS in 1994 is biased towards using
+Forth as a cross-platform application programming language, with heavy
+libraries, on top of other operating systems. I want to learn how to do a
+minimalist implementation that’s closer to the old Forth bare metal
+bootstrapping thing in mindset, but tweaked toward Unicode, modern 32-bit and
+64-bit CPUs, and wasm32 or Linux+X11 as the substrate.</p>
+<p>For example, I want to understand specifically what data structures and
+algorithms could be used to implement a minimal dictionary, data and return
+stacks, assembler, compiler, metacompiler, inner interpreter, and outer
+interpreter. Also, what set of words is necessary to implement in machine
+language to form the “nucleus” or “kernel” of a Forth System?</p>
 <p>In Appendix B, page 135, the “Required Word Set” chart lists the following
 words under the “Nucleus Words” heading:</p>
 <pre><code>!  *  */  */MOD  +  +!  -  /  /MOD  0&lt;  0=  0&gt;  1+  1-  2+  2-  &lt;  =  &gt;  &gt;R
