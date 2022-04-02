@@ -15,8 +15,10 @@ SPDX-License-Identifier: CC-BY-NC-SA-4.0
 <li><a href="#no-pranks-here">No pranks here</a></li>
 <li><a href="#learning-about-threaded-interpreter-models">Learning about threaded interpreter models</a>
 <ul>
-<li><a href="#summary-of-moving-forth">Summary of Moving Forth</a></li>
+<li><a href="#summary-of-moving-forth-threading-models">Summary of Moving Forth: Threading models</a></li>
 <li><a href="#threading-model-mentions-by-jeff-fox">Threading model mentions by Jeff Fox</a></li>
+<li><a href="#summary-of-moving-forth-virtual-registers">Summary of Moving Forth: Virtual registers</a></li>
+<li><a href="#summary-of-moving-forth-core-code-words">Summary of Moving Forth: Core CODE words</a></li>
 </ul></li>
 <li><a href="#assembly-with-nasm">Assembly with NASM</a></li>
 </ul><hr>
@@ -35,7 +37,7 @@ seems there are typically significant tradeoffs in performance versus
 complexity of implementation. That’s important to understand when analyzing old
 FIG-Forth implementations because they were designed for ease of portability as
 a primary goal, at the expense of performance.</p>
-<h3 id="summary-of-moving-forth">Summary of Moving Forth</h3>
+<h3 id="summary-of-moving-forth-threading-models">Summary of Moving Forth: Threading models</h3>
 <ul>
 <li><p><strong>Indirect Threaded Code</strong> (ITC): Used in FIG-Forth and commonly described in
 books. Dictionary headers for compiled words contain two pointers, one for
@@ -76,6 +78,48 @@ Silicon Valley Forth Interest Group Meeting” heading), subroutine threading
 with inlined native code is a common implementation method for modern Forth
 systems. Also, the <a href="http://www.ultratechnology.com/forth0.htm">Ultratechnology forth0</a> page says that Chuck Moore’s
 MachineForth “uses subroutine threading for defined words”.</p>
+<h3 id="summary-of-moving-forth-virtual-registers">Summary of Moving Forth: Virtual registers</h3>
+<p>Traditionally, Forth implementations used five “virtual registers” in defining
+the <code>NEXT</code>, <code>ENTER</code>, and <code>EXIT</code> inner interpreter words:</p>
+<ul>
+<li><p><strong>W</strong> (Working Register): Used for arithmetic and fetch/store pointers.</p></li>
+<li><p><strong>IP</strong> (Interpreter Pointer): Used by <code>NEXT</code>, <code>ENTER</code>, and <code>EXIT</code> to hold
+memory addresses. Needs to work with <code>INC</code>.</p></li>
+<li><p><strong>PSP</strong> or <strong>SP</strong> (Parameter Stack Pointer): Data stack used by <code>CODE</code> words.
+Needs to support indexed addressing along with <code>INC</code> and <code>DEC</code>.</p></li>
+<li><p><strong>RSP</strong> or <strong>RP</strong> (Return Stack Pointer): Return stack “used by colon
+definitions in ITC and DTC Forths, and by all words in STC Forths”. Same
+requirements as for PSP.</p></li>
+<li><p><strong>X</strong> (another working register): Used for jumps in ITC or as scratch
+register in <code>CODE</code> words.</p></li>
+<li><p><strong>UP</strong> (User Pointer): Holds base address of user area in multi-tasking
+Forths. This is used for context switching, so not needed in single-tasking
+Forths.</p></li>
+<li><p><strong>TOS</strong> (Top Of Stack): Keeping top item of stack in a register, rather than
+memory, speeds up words that don’t need to push or pop data. Keeping the two
+top items of stack in registers adds a lot of complexity on general purpose
+CPUs that were not designed for Forth [<em>my question: perhaps worth it due to a
+single memory access on a normal CPU taking many clock cycles?</em>]</p></li>
+</ul>
+<h3 id="summary-of-moving-forth-core-code-words">Summary of Moving Forth: Core CODE words</h3>
+<p><a href="https://www.bradrodriguez.com/papers/moving2.htm">Part 2</a> of Moving Forth describes some of the author’s benchmarking, but the
+interesting part for me was how it identified a set of core <code>CODE</code> words used
+for implementing the inner interpreter of a Forth system:</p>
+<pre><code>NEXT  (ends CODE definitions)
+ENTER (also DOCOL or DOCOLON, omit for STC)
+EXIT  (also ;S for fig, or RET instruction for STC)
+DOVAR (code for VARIABLE)
+DOCON (code for constant)
+LIT   (code for literals)
+@
+!
++
+DODOES (code for DOES&gt;)
+SWAP
+OVER
+ROT
+0=
++!    (uses TOS)</code></pre>
 <h2 id="assembly-with-nasm">Assembly with NASM</h2>
 <p>I’ve started experimenting with amd64 (ia64) assembly to try out some of the
 ideas I’m reading about with the different threading models.</p>
