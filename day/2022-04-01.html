@@ -64,6 +64,11 @@ than DTC, based on the number of available registers, speed of <code>PUSH</code>
 <code>CALL</code> and <code>RET</code> instead of an the inner interpreter as used by ITC or DTC.
 It’s also possible to inline machine code for short words instead of
 <code>CALL</code>ing them.</p></li>
+<li><p><strong>Token Threaded Code</strong> (TTC): TTC uses lists of tokens, instead of lists of
+addresses, to represent the words comprising a definition in the dictionary.
+For a dictionary with less than 256 items, words can be represented by 1-byte
+tokens. Tokens are resolved to addresses with a lookup table. TTC is slow
+because of the extra table lookups, but it allows for very compact code.</p></li>
 </ul>
 <h3 id="threading-model-mentions-by-jeff-fox">Threading model mentions by Jeff Fox</h3>
 <p>According to Jeff Fox’s <a href="http://www.ultratechnology.com/blog.htm">Ultratechnology blog</a> (scroll down to “10/23/10
@@ -72,8 +77,8 @@ with inlined native code is a common implementation method for modern Forth
 systems. Also, the <a href="http://www.ultratechnology.com/forth0.htm">Ultratechnology forth0</a> page says that Chuck Moore’s
 MachineForth “uses subroutine threading for defined words”.</p>
 <h2 id="assembly-with-nasm">Assembly with NASM</h2>
-<p>I’ve started experimenting with amd64 (intel64) assembly to try out some of
-the ideas I’m reading about with the different threading models.</p>
+<p>I’ve started experimenting with amd64 (ia64) assembly to try out some of the
+ideas I’m reading about with the different threading models.</p>
 <p>Initial experiments are at:</p>
 <ul>
 <li><a href="https://github.com/samblenny/markab-lab/tree/main/asm/amd64" class="uri">https://github.com/samblenny/markab-lab/tree/main/asm/amd64</a></li>
