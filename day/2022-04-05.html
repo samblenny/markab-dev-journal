@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-04-05: Assembly, Stacks, System V ABI</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-04-05: Assembly, Stacks, System V ABI</h1>
+<hr><ul>
+<li><a href="#assembly-is-awesome">Assembly is awesome</a></li>
+<li><a href="#stacks-and-system-v-abi">Stacks and System V ABI</a></li>
+<li><a href="#indirect-addressing-with-lea-and-mov">Indirect addressing with LEA and MOV</a></li>
+</ul><hr>
+<h2 id="assembly-is-awesome">Assembly is awesome</h2>
+<p>I’ve been having a lot of fun coding in ia64/amd64 assembly in NASM. My
+comments and commit messages at <a href="https://github.com/samblenny/markab-lab" class="uri">https://github.com/samblenny/markab-lab</a> have
+many more details on specifically what I’ve been doing, so I won’t repeat all
+that here.</p>
+<h2 id="stacks-and-system-v-abi">Stacks and System V ABI</h2>
+<p>The System V ABI <a href="https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf">AMD64 Supplement</a>, which is part of the <a href="https://refspecs.linuxbase.org/">Linux Standard Base</a>
+specifications, explains some very important things, including:</p>
+<ol type="1">
+<li><p>How registers and stack frames are used for argument passing to C-style
+function calls</p></li>
+<li><p>Which registers get preserved by the callee during such function calls</p></li>
+<li><p>How the stack is prepared by <code>exec</code> before your process starts. This
+includes an explanation of the initial stack frame layout with <code>argc</code>,
+<code>argv</code>, and <code>envp</code> for command line arguments and environment variables.</p></li>
+</ol>
+<p>It looks like I should be able to use the stack from <code>exec</code> as my stack
+machine’s return stack. That should be compatible with also using the same
+stack for syscalls, X11 library calls, and perhaps whatever other libraries I
+might have to use for doing audio IO.</p>
+<h2 id="indirect-addressing-with-lea-and-mov">Indirect addressing with LEA and MOV</h2>
+<p>One surprising gotcha gave me some trouble today. It turns out that if you do
+an indirect address calculation for <code>MOV</code> or <code>LEA</code> where a register gets
+multiplied by a scaling factor, the previous values of <code>RAX</code> and <code>RDX</code> will get
+stomped on during that calculation. Probably this is documented somewhere, but
+the ia64 and amd64 programmer’s manuals are enormous. As far as I can tell, the
+behavior for an indirect address calculation matches up with the documented
+behavior for a qword <code>MUL</code>, which is supposed to put its result in <code>RDX:RAX</code>.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
