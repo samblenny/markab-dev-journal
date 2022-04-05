@@ -1,0 +1,59 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-04-05b: AMD64 ABI details + Agner Fog</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-04-05b: AMD64 ABI details + Agner Fog</h1>
+<hr><ul>
+<li><a href="#amd64-system-v-abi-on-16-byte-rsp-alignment">AMD64 System V ABI on 16-byte RSP alignment</a>
+<ul>
+<li><a href="#method-to-ensure-stack-alignment">Method to ensure stack alignment</a></li>
+</ul></li>
+<li><a href="#agner-fog">Agner Fog</a></li>
+</ul><hr>
+<h2 id="amd64-system-v-abi-on-16-byte-rsp-alignment">AMD64 System V ABI on 16-byte RSP alignment</h2>
+<p>Reading through the <a href="http://www.nasm.us/xdoc/2.15.05/nasmdoc.pdf">NASM manual</a>, I found a puzzling statement in chapter 12
+that, “<em>64-bit platforms … require that the stack is 16-byte aligned at the
+entry to a function … the stack pointer (RSP) needs to be aligned on an odd
+multiple of 8 bytes before the CALL instruction.</em>”</p>
+<p>When I searched for more information about 16-byte stack alignment, the
+explanations related to moving data between SSE2 registers and stack memory. It
+seems the reason for the requirement is to facilitate convenient allocation of
+aligned local variables to use with 128-bit vector instructions. Apparently,
+mis-aligned allocations can result in page faults, extra cache misses, and
+problems with using the ALU. This <a href="https://stackoverflow.com/a/49397524">answer</a> to “<em>Why does the x86-64 / AMD64
+System V ABI mandate a 16 byte stack alignment?</em>” on Stack Overflow was
+helpful.</p>
+<h3 id="method-to-ensure-stack-alignment">Method to ensure stack alignment</h3>
+<p>Some of the sources on stack alignment mentioned that <code>and rsp, -16</code> is a way
+to ensure the stack is 16-byte aligned. But, that relies on being able to
+restore the old value of <code>rsp</code>. I think something approximately like this was
+being suggested:</p>
+<pre><code>some_function:  ; enter function
+push rbp        ; save caller&#39;s base pointer
+mov rbp, rsp    ; save stack pointer so it&#39;s possible to pop rbp before ret
+...             ; do stuff that might leave rsp mis-aligned
+and rsp, -16    ; align rsp
+call foo_func   ; make call that needs 16-byte aligned stack
+...
+mov rsp, rbp    ; get the old stack pointer back
+pop rbp         ; restore callee&#39;s rbp
+ret</code></pre>
+<p>Using this technique between Forth-style subroutine threading and C-FFI calls
+might be necessary when I want to call out to X11 or audio libraries. I suppose
+maybe I should do it for syscalls too? Haven’t seen that requirement mentioned,
+but it seems like the same motivating principle might apply to kernel code.</p>
+<h2 id="agner-fog">Agner Fog</h2>
+<p>The sources I found on stack alignment mentioned <a href="https://www.agner.org/optimize/">Agner Fog’s website</a> as an
+excellent source of documentation on optimizing ia64 and amd64 assembly code.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
