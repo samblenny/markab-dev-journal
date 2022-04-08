@@ -44,6 +44,7 @@ echo "Entry prefix is $ENTRY_PREFIX"
 
 # Get a title to use for filling in the YAML block title field
 echo "Enter the title you want to use (for YAML block, but omit quotes)..."
+echo    "ruler: YYYY-MM-DD: |-------------------------------------|"
 read -p "title: ${ENTRY_PREFIX}: " ENTRY_TITLE
 
 # YAML-escape apostrophes in case title has words like "don't" or "I'm". YAML

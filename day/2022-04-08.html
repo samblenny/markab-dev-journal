@@ -1,0 +1,51 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-04-08: Stacks work; Next up, token threading</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-04-08: Stacks work; Next up, token threading</h1>
+<hr><ul>
+<li><a href="#stacks-are-working">Stacks are working</a></li>
+<li><a href="#next-up">Next up</a>
+<ul>
+<li><a href="#thinking-on-how-to-do-token-threading">Thinking on how to do token threading</a></li>
+<li><a href="#command-line-and-environment-variable-parsing">Command line and environment variable parsing</a></li>
+</ul></li>
+</ul><hr>
+<h2 id="stacks-are-working">Stacks are working</h2>
+<p>Yesterday, in <a href="https://github.com/samblenny/markab-lab/blob/main/asm/amd64/string1.nasm">markab-lab/asm/amd64/string1.nasm</a>, I finished a
+probably-good-enough data stack hexdump routine. The data and return stack
+stuff should be adequate for the moment.</p>
+<h2 id="next-up">Next up</h2>
+<h3 id="thinking-on-how-to-do-token-threading">Thinking on how to do token threading</h3>
+<p>Debian 11 uses the Linux amd64 ABI, and all the old Intel CPU computers I have
+to test this stuff on have 64-bit CPUs. So, in order to use my hardware
+efficiently, in terms of performance per watt, it seems sensible to code
+Markab’s virtual stack machine emulation layer in 64-bit assembly with 64-bit
+stack cells.</p>
+<p>But, for the purposes of making little Forth-like app ROMs, 64-bits is way too
+much. I want to try token threading for the application layer. Starting with
+8-bit tokens (options for up to 32-bit literals) and 32-bit virtual cell size
+seems reasonable.</p>
+<p>To do that, I need to figure out how to build a token threaded inner
+interpreter. This will probably involve a jump table.</p>
+<h3 id="command-line-and-environment-variable-parsing">Command line and environment variable parsing</h3>
+<p>Eventually, I will need to consider command line arguments and environment
+variables provided to my virtual machine emulator by <code>exec</code> according to the
+Linux System V amd64 ABI. The arguments will be important for specifying a ROM
+file (block file?) to load at startup, and potentially to obtain an X11 display
+number. The environment variables could be useful for checking <code>TERM</code> to decide
+whether it’s okay to use ANSI escape codes on the terminal, or if output is
+being piped to a file.</p>
+<p>I don’t want to deal with this yet. First I want to work on token threading.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
