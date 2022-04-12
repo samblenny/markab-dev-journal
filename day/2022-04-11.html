@@ -1,0 +1,162 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-04-11: Progress on inner interpreter</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-04-11: Progress on inner interpreter</h1>
+<hr><ul>
+<li><a href="#token-threaded-inner-interpreter">Token threaded inner interpreter</a></li>
+<li><a href="#compiling-by-hand">Compiling by hand</a></li>
+<li><a href="#refining-my-data-stack-implementation">Refining my data stack implementation</a></li>
+<li><a href="#on-speed-robustness-and-ease-of-coding">On speed, robustness, and ease of coding</a></li>
+<li><a href="#summary-of-current-status">Summary of current status</a></li>
+<li><a href="#next-steps">Next steps</a></li>
+</ul><hr>
+<h2 id="token-threaded-inner-interpreter">Token threaded inner interpreter</h2>
+<p>Over the past several days, I’ve been working on my token threaded inner
+interpreter. The token interpreter is, approximately, a bytecode virtual
+machine with the personality of a traditional Forth inner interpreter.</p>
+<p>By “personality of a Forth inner interpreter”, I mean:</p>
+<ol type="1">
+<li><p>The tokens act as opcodes for a virtual stack machine CPU.</p></li>
+<li><p>The inner interpreter is written in AMD64 assembly language but structured
+as a Forth word. The inner interpreter’s action is to run the compiled
+machine code implementation of some other Forth word. In this case, the
+“machine code” is a list of tokens for my virtual stack CPU.</p></li>
+<li><p>Forth inner interpreters operate on code for words that have already been
+compiled.</p></li>
+<li><p>Forth outer interpreters operate on buffers of Forth source code to parse
+text into words, look up words in the dictionary, and invoke the compiler or
+inner interpreter as needed.</p></li>
+</ol>
+<h2 id="compiling-by-hand">Compiling by hand</h2>
+<p>Since I’m in the process of bootstrapping a Forth system from scratch, I don’t
+have a compiler routine yet. So, I’m the compiler!</p>
+<p>My be-the-compiler activities fall into three main categories:</p>
+<ol type="1">
+<li><p>Implementing virtual stack machine CPU operations: this takes the form of
+coding AMD64 assembly language routines to implement actions like pushing a
+byte literal on the stack, dropping the top item of the stack, formatting
+the top number on the stack into a hexadecimal string, or making a system
+call to have the host OS kernel write a buffer of bytes to stdout. These
+assembly routines make use of the full AMD64 general purpose register file,
+the System V ABI return stack (different from the Forth return stack), and
+subroutine calls by way of <code>JMP</code>, <code>CALL</code>, and <code>RET</code>.</p></li>
+<li><p>Implementing the token interpreter: this takes the form of coding an AMD64
+assembly language routine to translate between bytecode (tokens) and calls
+to the routines implementing virtual stack machine operations. The
+translation from token to <code>CALL</code> happens by using the token values to index
+into a jump table. The jump table is a list of dword code addresses, created
+with NASM’s <code>dd</code> pseudo-instruction, in the <code>.data</code> section of the object
+file assembled by NASM.</p></li>
+<li><p>Compiling Forth source code into tokens: This takes the form of using NASM’s
+<code>db</code> pseudo-instruction to encode a list of bytes into the <code>.data</code> section
+of the object file assembled by NASM. I write the Forth code in comments,
+then manually translate it to tokens by consulting the jump table.</p></li>
+</ol>
+<p>Part of what I mean by being the compiler is that I have to think a lot about
+object code generation and register assignments. For example, these are some of
+the considerations I’m learning to juggle:</p>
+<ol type="1">
+<li><p>Working registers: Instructions like <code>XOR</code> and <code>MOV</code> encode to different
+numbers of bytes of object code depending on which combination of register,
+register width, and memory address I supply as operands. In particular, code
+for operating on <code>eax</code> and <code>al</code> tends to be very compact. So, I’ve switched
+to using <code>eax</code> as my main working register. I also commonly use <code>edi</code>,
+<code>esi</code>, <code>edx</code> and <code>ecx</code> as temporary registers.</p></li>
+<li><p>Preserving values across calls: The System V AMD64 ABI specifies that <code>rbx</code>,
+<code>rsp</code>, <code>rbp</code>, <code>r12</code>, <code>r13</code>, <code>r14</code>, and <code>r15</code> are preserved across function
+calls. Since I need to make syscalls for IO, and because I anticipate using
+SysV-ABI libraries for X11 and audio, I’ve started following that convention
+in my assembly routines. I’ve found it convenient to use <code>rbp</code> and <code>rbx</code> for
+loop counters or other data that I want to persist across iterations of
+loops that contain <code>CALL</code> or <code>SYSCALL</code> instructions. Also, I use registers
+<code>r12</code>..<code>r15</code> to keep track of my virtual CPU’s data stack and return stack
+(both distinct from the SysV-ABI stack using <code>CALL</code>, <code>RET</code>, and <code>esp</code>).</p></li>
+<li><p>Preserving values across implicit arithmetic: Doing indirect address
+calculations with <code>LEA</code> or <code>MOV</code> can stomp on the contents of <code>eax</code> and
+<code>edx</code>, so I have to be careful about which temporary registers I use for
+what.</p></li>
+<li><p>Optimizations: I’ve been using <code>objdump</code> to examine NASM’s assembled object
+code and check for inefficiencies in my coding style. This feeds back into my
+register assignments, address calculations, and so on. My goal is to keep
+the code small, fast, and readable. So, there is balancing involved. I’ve
+been trying to make good use of registers and tail calls for implementing
+the VM operations, in order to avoid unnecessary memory accesses. I also try
+to keep the code compact so it will load quickly after branches.</p></li>
+</ol>
+<h2 id="refining-my-data-stack-implementation">Refining my data stack implementation</h2>
+<p>I started off with a circular data stack, but I decided that wasn’t worth the
+hassle. So, yesterday, I switched to using a plain array because it’s simpler
+to code and easier to explain.</p>
+<h2 id="on-speed-robustness-and-ease-of-coding">On speed, robustness, and ease of coding</h2>
+<p>I’ve been thinking about system architectural choices that will contribute to a
+good experience for coding in Markab’s Forth outer interpreter, once that’s a
+thing that exists.</p>
+<p>Yesterday, I implemented a new system for printing error messages, and I used
+that to add overflow and underflow checking to my stack operations.</p>
+<p>In general, I would like to build a system that inspires confidence, feels fun
+and responsive to use, and generally minimizes confusion. Not sure on all the
+details of how to do that.</p>
+<p>Current thinking is that I would like to…</p>
+<ul>
+<li><p>Encourage and facilitate following Chuck Moore’s guidance to factor words
+well, store large data in memory (not stack), limit the number of stack
+arguments passed to called words, and avoid peeking down into the stack.</p></li>
+<li><p>Make it relatively easy to detect coding errors and trace them back to the
+source code location where the problem originated.</p></li>
+<li><p>Make it difficult (ideally not possible) to accidentally corrupt memory,
+trigger a segfault, or mess with the host OS. I want the virtual CPU
+environment to behave as a relatively safe sandbox so that, a) you don’t have
+to worry too much about damaging things with your code, and b) you don’t have
+to worry too much about trying out code from strangers. This would include
+things like bounds checks for memory access, and being careful about how
+addresses for <code>JMP</code>, <code>CALL</code>, and <code>RET</code> are handled.</p></li>
+<li><p>Support UTF-8 Unicode text as a first-class data type. Traditional Forth
+vocabularies have words that enshrine the idea of characters being one byte
+large and using the ASCII encoding. Unicode support, if present, gets bolted
+on as an extra. I want to start off with a vocabulary of words that clearly
+distinguish between bytes and characters. Said another way, the ANS Forth
+standard has an unfortunate approach to text handling, and I don’t intend to
+follow it.</p></li>
+<li><p>Plan for bitrot-resistance: Avoid machine-specific or OS-specific
+dependencies that could create vendor lock-in or sensitivity to commercial
+product upgrade cycles. This is a tradeoff between performance and resilience
+through time. The goal is for token code to rely on features that can be
+implemented easily in virtual machines for various platforms and
+architectures.</p></li>
+</ul>
+<h2 id="summary-of-current-status">Summary of current status</h2>
+<p>Current stack VM and token interpreter status:</p>
+<ol type="1">
+<li><p>Basic data stack operations work for pushing literals, drop, swap, etc.</p></li>
+<li><p>Debug dumping stack contents in hex format works</p></li>
+<li><p>Dot-quote works for printing string literals</p></li>
+<li><p>Host OS syscalls work for <code>sys_write</code> and <code>sys_exit</code></p></li>
+<li><p>No math words yet</p></li>
+<li><p>No text parsing words yet</p></li>
+<li><p>No compiling words yet</p></li>
+<li><p>No control flow words yet</p></li>
+<li><p>Subject to those constraints, the token interpreter works</p></li>
+</ol>
+<h2 id="next-steps">Next steps</h2>
+<p>Things I’m thinking of doing soon:</p>
+<ol type="1">
+<li><p>Add math operations to the virtual stack machine</p></li>
+<li><p>Improve the inner interpreter to support control flow (branch, loop, call)</p></li>
+<li><p>Build a dictionary data structure and define words to manage it</p></li>
+<li><p>Figure out how to use the <code>sys_read</code> syscall to read keystrokes (not line as
+buffered, so probably will need additional syscalls to configure terminal)</p></li>
+<li><p>Build an outer interpreter and compiler words</p></li>
+</ol>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
