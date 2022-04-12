@@ -123,8 +123,8 @@ addresses for <code>JMP</code>, <code>CALL</code>, and <code>RET</code> are hand
 vocabularies have words that enshrine the idea of characters being one byte
 large and using the ASCII encoding. Unicode support, if present, gets bolted
 on as an extra. I want to start off with a vocabulary of words that clearly
-distinguish between bytes and characters. Said another way, the ANS Forth
-standard has an unfortunate approach to text handling, and I don’t intend to
+distinguish between bytes and characters. Said another way, the old Forth
+standards use an outdated approach to text handling, and I don’t intend to
 follow it.</p></li>
 <li><p>Plan for bitrot-resistance: Avoid machine-specific or OS-specific
 dependencies that could create vendor lock-in or sensitivity to commercial
@@ -152,8 +152,9 @@ architectures.</p></li>
 <li><p>Add math operations to the virtual stack machine</p></li>
 <li><p>Improve the inner interpreter to support control flow (branch, loop, call)</p></li>
 <li><p>Build a dictionary data structure and define words to manage it</p></li>
-<li><p>Figure out how to use the <code>sys_read</code> syscall to read keystrokes (not line as
-buffered, so probably will need additional syscalls to configure terminal)</p></li>
+<li><p>Figure out how to use the <code>sys_read</code> syscall to read keystrokes (one
+keystroke at a time – not line buffered – so probably will need additional
+syscalls to configure terminal)</p></li>
 <li><p>Build an outer interpreter and compiler words</p></li>
 </ol>
 </main><footer>
