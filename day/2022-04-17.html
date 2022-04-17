@@ -1,0 +1,121 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-04-17: Progress toward outer interpreter</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-04-17: Progress toward outer interpreter</h1>
+<hr><ul>
+<li><a href="#status">Status</a></li>
+<li><a href="#posix-termios-functions">POSIX termios functions</a></li>
+<li><a href="#ansi-escape-sequences">ANSI escape sequences</a>
+<ul>
+<li><a href="#method-to-detect-terminal-dimensions">Method to detect terminal dimensions</a></li>
+</ul></li>
+</ul><hr>
+<h2 id="status">Status</h2>
+<p>For the past week, I’ve been working on building blocks that I will need to
+build a Forth outer interpreter for Markab. What I want to end up with is an
+interpreter shell – like bash, python3, or irb – where I can interactively
+input and evaluate source code. That means I need four main capabilities:</p>
+<ol type="1">
+<li><p>Raw keyboard input: I need to be able to read individual keystrokes from the
+input stream to build line and screen editing features. For example, I want
+to be able to use the arrow keys to move the cursor around.</p></li>
+<li><p>Data structures and algorithms for buffer of UTF-8 encoded Unicode text: For
+old-school ASCII encoded American English text, things are simple because
+it’s safe to assume that one byte corresponds to one printable character,
+and the character glyphs are all the same width. With non-English Unicode
+text, none of those assumptions hold. When working with a buffer of UTF-8
+bytes, if you want to delete or insert a character, or just move your cursor
+around, there’s much more complexity to consider.</p></li>
+<li><p>ANSI escape sequence parsing for keyboard input: The Linux virtual terminal
+driver provides keystrokes for arrow keys, F-keys, and other keys in the
+form of escape sequences, such as the three byte sequence <code>Esc [ D</code> for
+pressing the left arrow key. I will need a state machine to identify escape
+sequences and translate them into events such as “pressed left-arrow”, or
+“pressed control-left-arrow”.</p></li>
+<li><p>ANSI escape sequence generation for text editing user interface: To make a
+terminal emulator do fancy stuff, such as changing the style or color of
+text, or moving the cursor around, you send it special escape sequence
+commands. For example, to print “hello” in bright red underlined text, you
+could send the 8-byte escape sequence <code>Esc [ 31 m Esc [ 4 m</code>, then “hello”,
+then the 3-byte escape sequence <code>Esc [ m</code>. In python, that could be done as,
+<code>print("\x1b[91m\x1b[4mhello\x1b[m")</code>.</p></li>
+</ol>
+<h2 id="posix-termios-functions">POSIX termios functions</h2>
+<p>In Linux, to configure how the terminal provides keyboard input, the best
+method seems to be using the <code>tcgetattr()</code> standard library function, which is
+part of the POSIX termios API. For relevant documentation on Linux or macOS, try
+<code>man termios</code> or <code>man tcgetattr</code>.</p>
+<h2 id="ansi-escape-sequences">ANSI escape sequences</h2>
+<p>The official standards for ANSI escape sequences are <a href="https://www.ecma-international.org/wp-content/uploads/ECMA-48_5th_edition_june_1991.pdf">ECMA-48</a> and <a href="https://www.ecma-international.org/wp-content/uploads/ECMA-35_6th_edition_december_1994.pdf">ECMA-35</a>,
+but those are fairly painful to decipher. The <a href="https://en.wikipedia.org/wiki/ANSI_escape_code">ANSI Escape Code</a> page on
+Wikipedia has a much friendlier summary.</p>
+<p>Important escape sequences:</p>
+<pre><code>Default value of $n and $m is 1
+
+Esc [ A -- cursor up 1 line
+Esc [ B -- cursor down 1 line
+Esc [ C -- cursor right 1 column
+Esc [ D -- cursor left 1 column
+Esc [ $n G -- move cursor to column $n
+Esc [ $n ; $m H -- move cursor to column $n, row $m
+Esc [ J -- clear from cursor to end of screen
+Esc [ 2 J -- clear entire screen
+Esc [ K -- clear from cursor to end of line
+Esc [ 2 K -- clear entire line
+Esc [ 6 n -- get cursor as `Esc [ $n ; $m R` ($n is row, $m is col)
+
+
+SGR (Select Graphic Rendition)
+
+Esc [ m -- reset attributes to normal
+Esc [ 1 m -- bold
+Esc [ 4 m -- underline
+Esc [ 7 m -- inverse video
+Esc [ {30..37,90..97} m -- set foreground color
+Esc [ {40..47,100..107} m -- set background color
+
+Example to set red foreground color: `Esc [ 31 m`
+
+Color values for use with: `Exc [ $n m`, where $n is an FG or BG value:
+
+FG   BG  Name
+--   --  ---------------------
+30   40  Black
+31   41  Red
+32   42  Green
+33   43  Yellow
+34   44  Blue
+35   45  Magenta
+36   46  Cyan
+37   47  White
+90  100  Gray (&quot;bright black&quot;)
+91  101  Bright red
+92  102  Bright green
+93  103  Bright Yellow
+94  104  Bright blue
+95  105  Bright Magenta
+96  106  Bright Cyan
+97  107  Bright White</code></pre>
+<h3 id="method-to-detect-terminal-dimensions">Method to detect terminal dimensions</h3>
+<p>When looking for a method to detect the current row and column dimensions of
+a terminal, I found a couple mentions of the following method:</p>
+<ol type="1">
+<li><p>Move cursor to very large row and column value such as (999, 999) with the
+expectation that the terminal emulator will clip your requested values to
+it’s maximum row and column.</p></li>
+<li><p>Get the cursor position. The result should be at the maximum available row
+and column, which is equivalent to the terminal’s row and column dimensions.</p></li>
+</ol>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
