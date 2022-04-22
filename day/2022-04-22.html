@@ -1,0 +1,102 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-04-22: POSIX, state machines, linking</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-04-22: POSIX, state machines, linking</h1>
+<hr><ul>
+<li><a href="#progress-towards-outer-interpreter">Progress towards outer interpreter</a></li>
+<li><a href="#posix-termios-terminal-configuration">POSIX termios terminal configuration</a></li>
+<li><a href="#xopen-signal-handling">XOPEN signal handling</a></li>
+<li><a href="#linking-c-repl-with-libmarkab">Linking C REPL with libmarkab</a></li>
+<li><a href="#ansi-escape-sequences-state-machines-line-editing">ANSI escape sequences, state machines, line editing</a></li>
+<li><a href="#next-steps">Next steps</a></li>
+</ul><hr>
+<h2 id="progress-towards-outer-interpreter">Progress towards outer interpreter</h2>
+<p>I’ve been making good progress on building a simple line-buffered input loop
+to feed input lines to a Forth REPL. This is kinda like a low-budget,
+low-feature clone of a readline library.</p>
+<p>My main goals have been:</p>
+<ol type="1">
+<li><p>Work around the fact that the <code>read()</code> function from stdlib, in the default
+Linux terminal driver configuration, will put lots of confusing garbage on
+the screen if you attempt to use arrow keys when typing a line of input.</p></li>
+<li><p>Lay the foundation for non-blocking keyboard input so that I can have my
+Forth system do single-threaded multi-tasking.</p></li>
+</ol>
+<p>My recent code is at <a href="https://github.com/samblenny/markab-lab/tree/main/repl">markab-lab/repl/</a>.</p>
+<h2 id="posix-termios-terminal-configuration">POSIX termios terminal configuration</h2>
+<p>When you start a binary from the Debian 11 shell prompt, the terminal comes up
+configured in “canonical” mode – sometimes called “cooked” mode – with line
+buffering and key echo turned on. This is not good for building custom editor
+UI, because key-combo shortcuts don’t work and keyboard input will echo garbage
+from ANSI escape sequences (arrow keys, F-keys, etc.).</p>
+<p>One option would be to use ncurses or a readline library, but I don’t want to
+do that.</p>
+<p>After lots of reading and experimenting, this is what I came up with:</p>
+<ol type="1">
+<li><p>Use the POSIX termios standard library functions <code>tcgetattr()</code> and
+<code>tcsetattr()</code> (see <code>man termios</code>) to turn off echo, canonical mode, and some
+other non-helpful features.</p></li>
+<li><p>Use the POSIX <code>atexit()</code> standard library function to restore the canonical
+mode configuration after a normal process exit.</p></li>
+<li><p>Configure signal handlers with the XOPEN <code>sigaction()</code> and <code>sigaltstack()</code>
+standard library functions to restore the original terminal configuration in
+case of a segmentation fault or illegal instruction error. This prevents
+the confusing situation of control getting returned to bash while the
+terminal is still configured for raw, non-echoed, character-buffered input.</p></li>
+</ol>
+<h2 id="xopen-signal-handling">XOPEN signal handling</h2>
+<p>In order to use the <code>sigaction</code> and <code>sigaltstack</code> functions to set up a handler
+for segmentation fault errors triggered by my assembly code, I had to do a
+<code>#define _XOPEN_SOURCE 500</code> before including some of the standard library
+header files. This is some weird new C magic for me. Never had to do such
+things before. As I understand it, this is part of a feature selection
+mechanism where you can opt into POSIX and XOPEN standard library features that
+go beyond what you get with the <code>-std=c99</code> compiler switch.</p>
+<p>I found some documentation about this at:</p>
+<ul>
+<li><code>man signal sigaction sigaltstack</code></li>
+<li><code>less /usr/include/features.h</code> (Debian 11)</li>
+<li><a href="https://pubs.opengroup.org/onlinepubs/007904875/basedefs/signal.h.html" class="uri">https://pubs.opengroup.org/onlinepubs/007904875/basedefs/signal.h.html</a></li>
+</ul>
+<h2 id="linking-c-repl-with-libmarkab">Linking C REPL with libmarkab</h2>
+<p>I got a Makefile working so that I can have a <code>main()</code> written in C that sets
+up all the terminal stuff, exports wrappers for terminal IO stdlib functions,
+and calls into my <code>libmarkab.o</code> Forth stuff. I’m currently assembling my Forth
+inner interpreter code with <code>nasm</code> into <code>libmarkab.o</code>, then using the <code>clang</code> C
+compiler to link it with my <code>main.c</code> code for terminal config, escape sequence
+parsing, and line editing.</p>
+<h2 id="ansi-escape-sequences-state-machines-line-editing">ANSI escape sequences, state machines, line editing</h2>
+<p>On the Linux terminal driver, keyboard input comes encoded in ANSI escape
+sequences. So, if you type an “a”, you get one byte representing the ASCII code
+for “a”. But, if you type something like the F1 or Left-Arrow keys, you get a
+multi-byte sequence, starting with the ASCII code for Escape (27). This can
+lead to a lot of confusing garbage in the input stream unless you make your
+code smart enough to parse and recognize out the normal escape sequences.</p>
+<p>My state machine, for the most part, just filters out all the special keys and
+key-combo shortcuts. Backspace, Enter, letters, numbers, and punctuation work,
+but that’s about it. I’m currently ignoring the arrow keys, F-keys, and such.</p>
+<p>The one fancy thing I’m doing is using a special escape sequence to detect the
+terminal size in rows and columns, then using the width in columns to do
+automatic horizontal scrolling for input lines that are wider than the width of
+the window.</p>
+<h2 id="next-steps">Next steps</h2>
+<p>The point of all this state machine and key-buffered input stuff is to feed
+lines of input to my [as yet still imaginary] Forth outer interpreter without
+causing it to block. That’s where the state machines come in. I want to be able
+to do multi-tasking in the Forth inner interpreter, for animation and audio
+synthesis, while keyboard input is still active.</p>
+<p>My next task is to build an outer interpreter on the assembly side, in
+<code>libmarkab.nasm</code>.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
