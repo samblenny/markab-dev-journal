@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-05-01: Outer interpreter + number formatting</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-05-01: Outer interpreter + number formatting</h1>
+<hr><ul>
+<li><a href="#outer-interpreter-status">Outer interpreter status</a></li>
+<li><a href="#improved-number-formatting">Improved number formatting</a></li>
+</ul><hr>
+<h2 id="outer-interpreter-status">Outer interpreter status</h2>
+<p>The outer interpreter is working well for math operations using the stack. I
+can now push numbers in decimal or hexadecimal format, and the basic stack and
+arithmetic words work fine. I recently added <code>hex</code> and <code>decimal</code> words for
+setting the number base.</p>
+<h2 id="improved-number-formatting">Improved number formatting</h2>
+<p>As of today, the <code>.</code> and <code>.S</code> words use the number base to format numbers as
+signed int32 in decimal mode, or unsigned uint32 in hexadecimal mode. The old
+number formatter only knew how to do fixed-width 32-bit unsigned hexadecimal.</p>
+<p>So, it’s now fairly convenient to do basic calculations with the stack.</p>
+<p>An example session:</p>
+<pre><code>decimal   OK
+1 2 3 .s  1 2 3  OK
+-1 -2 -3 .s  1 2 3 -1 -2 -3  OK
++ + + .s  1 2 -3  OK
++ + .s  0  OK
+hex  OK
+1 10 ff .s  0 1 10 FF  OK
+decimal .s  0 1 16 255  OK
+bye  OK</code></pre>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
