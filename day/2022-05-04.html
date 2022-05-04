@@ -1,0 +1,106 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-05-04: Working on the compiler</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-05-04: Working on the compiler</h1>
+<hr><ul>
+<li><a href="#compiler-progress">Compiler progress</a></li>
+<li><a href="#other-new-words-and-improvements">Other new words and improvements</a></li>
+<li><a href="#bug-fixes">Bug fixes</a></li>
+<li><a href="#next-steps">Next steps</a>
+<ul>
+<li><a href="#data-structures-to-support-bounds-checking">Data structures to support bounds checking</a></li>
+<li><a href="#finish-compiler">Finish compiler</a></li>
+</ul></li>
+</ul><hr>
+<h2 id="compiler-progress">Compiler progress</h2>
+<p>I’ve started working on the compiler. Recent changes include:</p>
+<ol type="1">
+<li><p>Add memory block for user dictionary: There are now <code>Voc0</code> (vocabulary 0)
+for built-in words and <code>Voc1</code> (vocabulary 1) for user defined words.</p></li>
+<li><p>Add word <code>word</code> to copy a name from the input stream to the end of the
+user dictionary. This builds the name field of a dictionary entry for
+compiler words that define new named dictionary items.</p></li>
+<li><p>Add word <code>create</code> to start a new dictionary entry.</p></li>
+<li><p>Add word <code>colon</code> to do the action for a colon definition.</p></li>
+</ol>
+<h2 id="other-new-words-and-improvements">Other new words and improvements</h2>
+<p>Additional things I’ve added or improved include:</p>
+<ol type="1">
+<li><p>New word <code>clearstack</code>: Clear the stack without having to repeat <code>drop</code></p></li>
+<li><p>New word <code>(</code> (paren): Start a comment of the form, <code>( this is a comment)</code></p></li>
+<li><p>New word <code>space</code>: Print a space to the output stream</p></li>
+<li><p>New loadscreen mechanism: Forth source code from the file <code>screen00.fs</code> now
+gets included in .data section of the markab binary and interpreted right
+before the interactive shell starts.</p></li>
+</ol>
+<h2 id="bug-fixes">Bug fixes</h2>
+<p>Now that the interpreter shell works pretty well, I’ve been able to experiment
+with different inputs and discover some problems.</p>
+<p>Things I’ve fixed in the past week include:</p>
+<ul>
+<li><p>Incorrect parsing of negative numbers</p></li>
+<li><p>Inner interpreter error message for bad tokens was broken</p></li>
+<li><p>Outer interpreter mishandled input of UTF-8 encoded emoji</p></li>
+<li><p>Output was broken when reading input from pipe or file</p></li>
+</ul>
+<h2 id="next-steps">Next steps</h2>
+<h3 id="data-structures-to-support-bounds-checking">Data structures to support bounds checking</h3>
+<p>My dictionary data structure doesn’t currently have a way to deal with
+allocating memory for variables and compiled tokens separately from the list of
+names. That needs to change because I want memory access to be bounds checked.</p>
+<p>Things I want the bounds checking to enforce:</p>
+<ol type="1">
+<li><p>Store (<code>!</code>) can only access addresses for allocated variables.</p></li>
+<li><p>Fetch (<code>@</code>) can access allocated variables, token memory, and dictionary
+memory. The reason to grant fetch more access than store is to accommodate
+user defined words to implement disassembly, memory dumping, and debugging
+features.</p></li>
+<li><p>The variable memory is not executable, so it is not possible to jump to
+tokens that have been stored in a variable with <code>!</code>.</p></li>
+<li><p>Jump target addresses in token code, and return addresses on the VM’s inner
+interpreter return stack, must point to an address in the memory range for
+compiled tokens.</p></li>
+<li><p>Fetch and store cannot access call stack memory for the Markab VM’s process.
+Specifically, fetch or store are not allowed to access the memory range of
+the call stack used by the amd64 <code>push</code>, <code>pop</code>, <code>call</code>, and <code>ret</code>
+instructions. The Markab VM’s inner interpreter maintains separate memory
+in the .bss section for the Forth return and data stacks.</p></li>
+<li><p>Write access to the memory for compiled tokens is only allowed to defining
+words that are part of the core word set. User defined words cannot compile
+raw token values on their own – to modify token memory, they must use the
+built in defining words. Fetch can read token memory, but store is not
+allowed to modify token memory.</p></li>
+</ol>
+<p>The objectives of the bounds checking are:</p>
+<ol type="1">
+<li><p>Sandbox user-defined words to increase safety and reduce the need for blind
+trust when sharing Markab Forth source code with strangers. The point is to
+have the VM do a reasonably good job of preventing stack smashing attacks
+that could lead to shellcode or other forms of elevated host OS access.</p></li>
+<li><p>Make it easier to write and debug code by catching memory access errors that
+might cause memory corruption.</p></li>
+</ol>
+<h3 id="finish-compiler">Finish compiler</h3>
+<p>I need to:</p>
+<ol type="1">
+<li><p>Re-work the dictionary data structures, probably using an external script
+for code generation instead of my current NASM assembler macros</p></li>
+<li><p>Add a compile mode to the inner interpreter</p></li>
+<li><p>Add words for defining constants and variables</p></li>
+<li><p>Add words <code>@</code> and <code>!</code> (fetch and store) for accessing variables</p></li>
+<li><p>Finish the words for defining words (add a word for <code>;</code>)</p></li>
+<li><p>Add flow control words such as <code>if</code>, <code>do</code>, and <code>loop</code></p></li>
+</ol>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
