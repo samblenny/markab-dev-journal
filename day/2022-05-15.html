@@ -1,0 +1,83 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-05-15: Compiler progress</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-05-15: Compiler progress</h1>
+<hr><ul>
+<li><a href="#general-project-status">General project status</a></li>
+<li><a href="#data-structures">Data structures</a></li>
+<li><a href="#what-works-and-what-is-incomplete">What works and what is incomplete</a></li>
+</ul><hr>
+<h2 id="general-project-status">General project status</h2>
+<p>I’ve slowed down my pace of development on Markab. I was pushing it kinda hard,
+to the exclusion of other things that could use my attention.</p>
+<p>The stuff below describes the current state of compiling in markab-lab/repl.</p>
+<h2 id="data-structures">Data structures</h2>
+<p>I split the dictionary linked list into two parts. Dictionary 0 is created at
+compile time and contains words for the subset of tokens which are available to
+invoke directly from the outer interpreter’s command line. Dictionary 2 is for
+user-defined words created at runtime through colon-definitions. There is no
+Dictionary 1 yet, but I might use that for compiler words – not sure.</p>
+<p>I’m using a field in the dictionary list item records to indicate whether that
+word’s parameter contains a VM instruction token, a pointer to variable memory,
+or a pointer to code memory. The token and code memory pointer mechanisms work,
+but the variable memory pointer mechanism is incomplete.</p>
+<p>Variable memory is accessible by numeric address with the fetch and store words
+(<code>@</code> and <code>!</code>). Currently variable memory is not executable, but I might decide
+to change that.</p>
+<p>Code memory is executable by the token interpreter, but it is not currently
+accessible with fetch and store. Again, I might decide to change that. Writes
+to to code memory only happen by way of compiler words, which are implemented
+in assembly language (not token code as is the case for user-defined words).</p>
+<p>Goals of splitting things up in this way, rather than mushing everything all
+together in one dictionary in the traditional figForth style, include:</p>
+<ol type="1">
+<li><p>By storing compiled token code contiguously in its own memory area, rather
+than chopped up in chunks within a linked list, it becomes possible to do
+tricks with continuations (implicit tail calls), like this:</p>
+<pre><code>: intro_word do some stuff       ( &lt;-- no semicolon!)
+: continuation do more stuff ;</code></pre></li>
+<li><p>Limiting the memory areas which can be modified with fetch and store should
+make it easier to detect, and recover from, logic errors. This should also
+protect against stack-smashing.</p></li>
+<li><p>Preventing arbitrary modifications to code memory (only compiler words can
+make changes) should make it easier to write reliable code. This comes at
+the expense of some of the traditional extensibility that Forth is known
+for. Maybe that stuff is too powerful? Maybe I’m being overly cautious? I’m
+not sure. I want to try this way and see how it works out. My sense is that
+a system with unbounded possibilities for runtime modification of code would
+be a bad idea, because it would make debugging difficult when things go
+wrong.</p></li>
+</ol>
+<h2 id="what-works-and-what-is-incomplete">What works and what is incomplete</h2>
+<p>Things that work:</p>
+<ul>
+<li><p><code>: ... ;</code> – colon definitions for adding words to the dictionary</p></li>
+<li><p><code>: ... 1 2 + . ;</code> – compiled number literals and stack operations</p></li>
+<li><p><code>: ... ( comment) ;</code> – compiled comments (they just get ignored)</p></li>
+<li><p><code>: ... ." string" ;</code> – compiled printing of strings</p></li>
+<li><p><code>32 0 !</code> – storing dword by numeric address (this stores 32 at address 0)</p></li>
+<li><p><code>8 4 b!</code> – store byte by numeric address (this stores byte=8 at address 4)</p></li>
+<li><p><code>0 @</code> – fetch dword</p></li>
+<li><p><code>4 b@</code> – fetch byte</p></li>
+</ul>
+<p>Things that do not work yet:</p>
+<ul>
+<li><p><code>: a ... ;  : b a ;</code> – compiled nested calls</p></li>
+<li><p><code>variable foo  1 foo !</code> – compiling of named variables</p></li>
+<li><p><code>1 constant bar</code> – compiling of constants</p></li>
+<li><p><code>variable arr 5 allot</code> – compiling of named arrays</p></li>
+<li><p>compiled loops and branching (do-loop, if-then-else, …)</p></li>
+</ul>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
