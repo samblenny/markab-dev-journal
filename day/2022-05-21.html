@@ -1,0 +1,182 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-05-21: Compiler + planning a refactor</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-05-21: Compiler + planning a refactor</h1>
+<hr><ul>
+<li><a href="#more-compiler-progress">More compiler progress</a></li>
+<li><a href="#code-examples">Code examples</a></li>
+<li><a href="#refactoring">Refactoring</a>
+<ul>
+<li><a href="#background-naming-things">Background: naming things</a></li>
+<li><a href="#background-error-handling-memory-protection">Background: error handling &amp; memory protection</a></li>
+<li><a href="#goals">Goals</a></li>
+</ul></li>
+<li><a href="#next-steps">Next steps</a></li>
+</ul><hr>
+<h2 id="more-compiler-progress">More compiler progress</h2>
+<p>Since my last update, I’ve gotten several new compiler features working, with
+some related improvements to the token-threaded inner interpreter (aka VM):</p>
+<ul>
+<li><p><code>Jump</code> and <code>Call</code> virtual machine instructions (tokens)</p></li>
+<li><p>Nested function calls</p></li>
+<li><p>Tail call optimization (<code>name ;</code> compiles as jump to address of <code>name</code>
+rather than call to address of <code>name</code>)</p></li>
+<li><p>Implicit tail calls (with definitions <code>a ... : b ... ;</code>, invoking <code>a</code> will
+run the code for <code>a</code> then continue into the code for <code>b</code> because there is no
+<code>;</code> at the end of <code>a</code>)</p></li>
+<li><p>Conditional-return looping construct (<code>next</code>) for building tail call
+optimized recursive loops like this:</p>
+<pre><code>: a 5 space  : b next 1 - 42 emit b ;  OK
+a *****  OK</code></pre>
+<p>As part of this, I renamed my old <code>Next</code> VM instruction to <code>Return</code> (I’ll
+say more on renaming and refactoring below, but not just yet). Also, <code>next</code>
+currently returns if the top item on the data stack is 0, but I intend to
+modify it to use the top item of the return stack. But, to do that, I need
+to finish some refactoring.</p></li>
+<li><p>Looping is constrained by a loop limit counter in the token-threaded inner
+interpreter. So, long loops will get interrupted with an error. My current
+measure for “long” is a constant that I selected experimentally to stop an
+infinite loop with no noticeable delay (less than a second). My goal is to
+support single-threaded cooperative multi-tasking with no noticeable input
+lag, so compute intensive tasks will need to be broken up into chunks that
+can complete quickly.</p>
+<p>Here is an example of a long running loop that increments the top item on the
+stack with each iteration:</p>
+<pre><code>: a 0  : b 1 + b ;  ( b is attempting an infinite loop)  OK
+clearstack  OK
+a  E22 Loop too long
+.s  174762  OK</code></pre></li>
+</ul>
+<h2 id="code-examples">Code examples</h2>
+<p>Here are some examples of things that work now:</p>
+<pre><code>( nested calls)
+: f0 swap dup . over + ;  OK
+: f1 f0 f0 f0 ;  OK
+: fib 1 dup f1 f1 f1 . ; OK
+fib 1 1 2 3 5 8 13 21 34 89  OK
+
+( implicit tail call)
+: start 1 .  : continue 2 . 3 . ;  OK
+start 1 2 3  OK
+continue 2 3  OK
+
+( loops)
+: 9down 9  : L1 next 1 - dup      . L1 ;  OK
+: 9up 9    : L2 next 1 - 8 over - . L2 ;  OK
+9down 8 7 6 5 4 3 2 1 0  OK
+9up 0 1 2 3 4 5 6 7 8  OK</code></pre>
+<h2 id="refactoring">Refactoring</h2>
+<p>As I improve the compiler, I’m realizing that some of my initial design ideas
+were impractical, and that my naming of instructions, registers, and words is
+inconsistent. I’ve started the process of correcting those problems.</p>
+<p>Also, I’ve almost reached the point where I can start refactoring features from
+assembly language to Forth. I’m up to 2098 lines of amd64 assembly language
+source code for libmarkab. The process of writing all this stuff is very fun,
+but it’s starting to feel awkward to navigate. There is more boilerplate and
+repetition than I would like. It feels like there are opportunities to simplify
+and factor things better. Also, I worry I’m coding too much from a mindset of
+being a human C compiler. I’m getting very familiar with System V ABI register
+assignments, which is fun and useful, but it feels like it’s leading me off the
+path and away from understanding the mindset of how to build old-school Forth
+compilers.</p>
+<p>I want to refactor some of the tasks I’ve been doing in assembly into Forth. In
+particular, I want to move as much of the compiler as I can. This will, one,
+help me understand the design of old-school Forth compilers, and, two, make it
+easier to port my assembly code to ARM, WebAssembly, and perhaps RISC-V.</p>
+<h3 id="background-naming-things">Background: naming things</h3>
+<p>I’ve been reading about, and experimenting with, a variety of Forths off and on
+for several years. Some of the most refined ideas about Forth compiling show up
+in documentation for non-standard Forths meant for use with Chuck Moore’s Forth
+CPU designs. That stuff is subtle and tricky to understand – challenging, but
+worth it.</p>
+<p>On the other hand, writing on older Forths in the lineage of figForth,
+Forth-79, Forth-83, and ANS Forth is somewhat easier to find and read. But,
+that stuff is oriented toward cross-platform portability on 8-bit and 16-bit
+computers. The lineage of standard-compliant Forths has many good ideas and
+many problematic limitations. The big trouble is the standards prioritized
+backward compatibility with features designed for the severe limitations of
+hobby computers from the late 1970’s.</p>
+<p>One of the important ideas from the standard Forths is to use <code>INVERT</code>, <code>0=</code>,
+and <code>NEGATE</code> to avoid ambiguity around conflating different types of negation
+(two’s complement, one’s complement, and boolean). The old (Forth-79 era) usage
+of <code>NOT</code> along with -1 (true) and 0 (false) boolean values is very confusing.
+Examples from old books of code using <code>NOT</code> won’t run on a modern ANS Forth
+without some extra work. It’s hard to find the explanations of how that all
+came to be.</p>
+<p>In my code, I’ve been using a muddle of instruction, register, and word names
+taken from reading about different Forth systems. I’m feeling the need to clean
+up and reconcile inconsistencies in the terms and names I’m using. It’s been
+getting confusing.</p>
+<h3 id="background-error-handling-memory-protection">Background: error handling &amp; memory protection</h3>
+<p>In the not too distant past, I spent a lot of time writing code in Rust. Then,
+after that, I experimented with Ada for a while. Also, I’m generally aware of
+categories of problems that consistently happen with languages such as C.</p>
+<p>All of this has convinced me there are significant benefits to be had from
+spending some CPU cycle overhead on language-level features to help with things
+like bounds checking of array access.</p>
+<p>I started off incorporating some ideas on memory protection into my initial
+design of Markab Forth. But, as I work on the compiler, I see how I’ve probably
+done too much. In particular, I think I went too far with factoring my
+dictionary data structure into different memory areas.</p>
+<p>My current dictionary has two linked lists, a dedicated memory area for
+user-defined variables, and a dedicated area for compiled code of user-defined
+words. The linked list stores names and pointers. I built my <code>Store</code> and
+<code>Fetch</code> VM instructions with range checks so <code>!</code> and <code>@</code> can only read and
+write in the dedicated memory area for user-defined variables. Currently, my
+compiling words are implemented in assembly language, and they write to a
+memory area that cannot be accessed with <code>!</code> and <code>@</code>. This is turning out to be
+a problem.</p>
+<h3 id="goals">Goals</h3>
+<p>I want to start writing compiling words in Forth rather than assembly, so I
+need to loosen up the memory access checks so that <code>!</code> and <code>@</code> will be usable
+for building an assembler and compiler.</p>
+<p>Consolidating the memory areas will make it possible for my Forth code to
+corrupt its own code memory (with the VM’s virtual address space) in a way
+that’s not currently possible. But, by the same measure, it will enable me to
+write compiling words in Forth. I see now that I need to be able to do that.</p>
+<p>I should be able to do this safely, without exposing the host OS process to
+stack-smashing, because my compiled Forth code consists of tokens and literals
+using the instruction set of my token-threaded inner interpreter, which
+operates in a virtual address space.</p>
+<p>If I merge the memory areas for the dictionary, user-defined variables, and
+compiled words, I think it should be much more practical to build a compiler in
+the traditional Forth way. That change will shrink my assembly language source
+code, which will help with porting to ARM and WebAssembly.</p>
+<h2 id="next-steps">Next steps</h2>
+<ol type="1">
+<li><p>Revise my use of names for registers, instructions, and words with an eye
+towards matching usage in non-standard Forths designed for Chuck Moore’s
+Forth chips. I’m thinking mostly about CPU instruction sets, looping
+constructs, and memory access structured around blocks and bins. I don’t
+plan to take much from colorForth as it’s too much of a radical departure –
+from pretty much everything – for my taste. Also, where it makes sense, use
+good ideas from the standard Forths because people are familiar with that
+stuff (basic math and stack ops, <code>.</code>, <code>."</code>, <code>emit</code> and friends, etc).</p></li>
+<li><p>Start moving compiler features from assembly to Forth.</p></li>
+<li><p>Explore options for writing string processing code in Forth. In particular,
+look at number formatting and control flow words that compile forward or
+backward jumps (how to match <code>IF</code> with <code>ELSE</code>?).</p></li>
+<li><p>Explore options for defining control flow constructs that don’t suck.
+Non-suck should be measured by considering a balance of legibility and
+simplicity of correct usage, runtime efficiency, simplicity of constructing
+the defining words, and the possibility of having the compiler report usage
+errors.</p>
+<p>Consider the possibility that standard Forth control flow constructs such as
+<code>DO..LOOP</code> and <code>IF..ELSE</code> should be entirely omitted. It might be possible to
+make do with control flow based on conditional returns and tail recursion.
+IIRC, Chuck Moore has expressed some enthusiasm for this approach in talks and
+interviews that I’ve seen online, though I don’t remember where ¯\_(ツ)_/¯.</p></li>
+</ol>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
