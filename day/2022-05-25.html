@@ -1,0 +1,295 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-05-25: MarkabForth manifesto + glossary</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-05-25: MarkabForth manifesto + glossary</h1>
+<hr><ul>
+<li><a href="#trouble-with-naming-things">Trouble with naming things</a></li>
+<li><a href="#markabforth-manifesto">MarkabForth manifesto</a></li>
+<li><a href="#glossary">Glossary</a></li>
+</ul><hr>
+<h2 id="trouble-with-naming-things">Trouble with naming things</h2>
+<p>Currently, I’m refactoring my compiler and dictionary so I can port some of the
+code from assembler to Forth. In the course of doing that, I’m struggling a bit
+with how to name things, explain how they work, and explain why I chose those
+options. The rule of thumb that I’m following is, if I can’t explain my choices
+in coherent prose, then the design is probably bad.</p>
+<p>The trouble with names of things related to Forth is, there are over 50 years
+of evolving precedent with more and less agreement in usage depending on the
+subject area. In some important cases, terms that were generally agreed upon 30
+years ago in the Forth enthusiast community conflict with modern usage in ways
+that can be seriously confusing to a modern reader (e.g. “threading”, “stack”,
+true is 0, false is -1, NOT vs INVERT, 0=, and NEGATE, etc.).</p>
+<p>In the family tree of Forth and Forth-like lineages, which was at one time
+quite broad and diverse, there appears to have been a big schismatic struggle
+where the standards enthusiast community won the fight for mind share. Or, at
+least what’s left of their stuff is the easiest to find when you go searching
+for information about Forth.</p>
+<p>Most the other branches are hard to find information about – making progress
+requires navigating lots of broken links and spelunking through old pdf scans
+of magazines, books, and manuals on archive.org. It seems like a lot of the
+post-figForth work on high performance Forth systems got channeled into
+proprietary hardware and software companies which appear to be mostly defunct.
+There is some writing available about those efforts now, but it’s challenging
+to integrate all the conceptual bits and pieces from different sources.</p>
+<p>Anyhow, I’m trying to integrate what I’ve read from all those sources into a
+coherent lexicon for talking about what I’m building. There are three main
+areas I’m currently looking at:</p>
+<ol type="1">
+<li><p>Register names and instruction sets for stack machine CPUs. I’ve been
+writing an implicit virtual machine spec by way of implementing an emulator
+for it in assembly language. Seems like I might as well get a bit more
+formal about my process and try to incorporate ideas from the lineage of
+Forth stack machine CPU design. In particular, I want to use register names
+like <code>T</code>, <code>R</code>, and <code>A</code> to fit with some of Chuck’s techniques and coding
+patterns for modern non-standard Forth (e.g. copying with loops of <code>@b !+</code>).</p></li>
+<li><p>Conventions for layout and naming in Forth system memory maps. This includes
+dictionaries, terminal input buffer, string processing buffers, and other
+variables. I want to come up with a way to clearly talk about what exactly
+the “Dictionary” is, and what’s involved with switching “Vocabularies” while
+in the compiler or assembler modes. This will be important, for example, to
+document, what happens if you attempt to redefine one of the built-in words?</p></li>
+<li><p>Words to include in the built-in interpreter and compiler vocabularies. Some
+of the basics for stack operations and math stuff are straightforward. But,
+when it comes to control flow constructs, a lot of the traditional Forth
+constructs are very weird and confusing when viewed from the perspective of
+a modern programmer with some exposure to languages using C-like syntax. My
+concern is that I want to be able to write documentation for markabForth
+without having to constantly make excuses and explanations for why it uses
+familiar terms to represent unfamiliar meanings, as compared to common
+modern usage. I also don’t want to confuse people who are familiar with
+Forth. Perhaps, the best compromise may be to add new words of my own, then
+write comprehensive tutorials.</p></li>
+</ol>
+<p>So, with that in mind, I’ll have a go at writing down my current understanding of
+what I’m attempting to do, along with a glossary of the terms that I’m using in
+my code and comments.</p>
+<h2 id="markabforth-manifesto">MarkabForth manifesto</h2>
+<p>Talking about Forth is tricky because the essence of Forth is a process, and a
+way of thinking about building tools, rather than a specific well-defined,
+clearly demarcated, crystallized thing. As Chuck Moore tells it, Forth is about
+building highly customized solutions, adapted to the needs of specific
+problems, on specific hardware. Chuck emphasizes the importance of optimizing
+the combined hardware and software system for overall simplicity. Realizing the
+potential of Forth as practice and mindset depends on willingness to define
+problems, and factor solutions, to avoid spending time and effort building
+things you don’t need. Omitting the non-essential is how we achieve simplicity.</p>
+<p>To that end, ignoring crufty standards documents is highly effective at saving
+a great deal of effort.</p>
+<p>But, markabForth is not entirely unconcerned with Forth standards. To the
+extent standards contain good ideas, I’m happy to consider them. To the extent
+books on various Forths agree on useful conventions, I will try not to deviate
+from those without good reason. The important thing is to arrive at a set of
+words and vocabularies that are adequate for getting work done and which can be
+explained without too much confusion to a modern reader.</p>
+<p>With that in mind, some Forth conventions only make sense if you happen to need
+backward compatibility with system architectures for hobby computers from the
+late 1970’s. That was a long time ago. Some people still run those machines.
+But, I’m comfortable claiming that 40 years of progress in computing technology
+is a sufficiently good reason for markabForth to abandon some of Forth’s old
+ways (ASCII strings, 16-bit cells with double-word operations, …).</p>
+<p>Of the beneficial old Forth patterns, the thing I most hope to incorporate is
+the subtle craft of building a well-factored compiler and assembler, with the
+capacity for user-defined compiling words, and with a high performance kernel
+and block-based disk IO. As I understand it, doing that properly allows Forth
+to be used in a manner that feels similar to working in a fancy Lisp, but with
+very light resource requirements. I’ve read claims, from people who ought to
+know, about using Forth for fancy database, graphics, and audio stuff. But,
+I’ve never seen it in action.</p>
+<p>I want markabForth to be usable for such things, with an emphasis on supporting
+individual creative projects on constrained hardware with potentially limited
+network connectivity. Most modern development tools are a big hassle to use in
+that way. I want markabForth to be simple, fast, flexible, friendly for
+not-super-technical folk, fun to use, and easy to extend and maintain. In
+particular, I want markabForth to be suitable for archival-grade projects. The
+point of using an emulated token-threaded VM is to allow for code to be
+relatively safe to share and insulated from hardware and software updates over
+time. Computing platforms come and go, so perhaps the VM will need to be ported
+to new systems once in a while. But, other than that, my goal is for code, once
+working, to continue working long into the future.</p>
+<h2 id="glossary">Glossary</h2>
+<p>In 50-plus years of writing about Forth, people have used a variety of
+evolving, and sometimes conflicting, terminology. This glossary attempts to
+define key concepts used in the code and comments of markabForth.</p>
+<p>Please don’t be put off if this covers stuff you already know, or if it
+includes things that seem too technical. While markabForth is a bit arcane and
+technical in its manner of implementation, my goal is to have the end result
+present a user interface that is simple, friendly, well-documented, and
+accessible to people who do not have a deep technical background. To that end,
+I need documentation that covers a lot of ground and tries not to make too many
+assumptions about your existing background knowledge. This glossary is for
+people who want to know about the internal system architecture of markabForth
+– including me, as I’m currently trying to define what that is.</p>
+<ul>
+<li><p><strong>Central Processing Unit</strong> (<strong>CPU</strong>): The integrated circuit (“chip”) at the
+center of a computer that directs and coordinates the process of computing.
+The CPU has logic circuits for tasks such as integer arithmetic and accessing
+data through peripheral devices attached to a memory bus. The CPU decides
+what to do by reading lists of instructions from a peripheral memory device.</p></li>
+<li><p><strong>Virtual CPU</strong>: A Virtual CPU is like a physical CPU, but the Virtual CPU’s
+operations are emulated in software, rather than etched in silicon. CPU
+emulation is commonly used for archival preservation of software written for
+computer systems that are no longer manufactured. MarkabForth’s virtual CPU
+is implemented as amd64 assembly language subroutines for each of the
+instruction tokens in its virtual CPU instruction set.</p></li>
+<li><p><strong>CPU Instruction Set</strong>: The set of instructions supported by a CPU. Usually,
+an instruction will take data from a CPU register, combine it with data from
+memory or a second register, then store the result to a register or a memory
+location. MarkabForth’s virtual CPU’s instructions are referred to as
+“Tokens”, because Markab uses a token-threaded inner interpreter and it’s
+easier to say tokens than to say “Virtual CPU Instructions”.</p></li>
+<li><p><strong>Token-Threading</strong>: In modern programming, “threading” typically refers to a
+method of scheduling concurrently running tasks. But, in Forth usage,
+“threading” means an entirely different thing. Forth tradition uses “threaded
+code”, or “threaded interpreter”, to denote a way of factoring code into
+subroutines. A threaded interpreter reads a list of subroutines and calls
+each one in turn. The types of threaded interpreters differ by how they store
+the list of subroutines. In the case of token threading, subroutines lists
+are formed from “tokens”, which are typically 8-bits long (1 byte). Other
+types of threading can use lists of memory addresses, machine code
+instructions, or machine code to jump or call other machine code subroutines.</p>
+<p>MarkabForth uses token-threading – although it is less efficient than other
+methods – because it works well for a implementing a Virtual CPU with safety
+checks to prevent stack smashing, out of range memory access, and other types
+of unsafe actions that would be difficult to prevent with other threaded
+interpreters. I am willing to sacrifice some speed because doing so supports
+my goal to make it moderately safe to exchange markabForth code with
+strangers. Also, the safety checks make it easier to work on your own code
+conveniently and get helpful error messages instead of having to worry about
+crashing the markabForth interpreter if you make a little mistake.</p></li>
+<li><p><strong>Token</strong>: See Token-Threading.</p></li>
+<li><p><strong>Memory</strong>: An electronic circuit for storing data that can be operated on by
+a CPU. Due thermodynamics, the speed of light, and other
+unavoidable-laws-of-physics stuff, memory devices are built with tradeoffs
+between capacity and speed. If you want a very fast memory, it must have a
+relatively small capacity, be physically located close to the CPU, and have
+dedicated wiring. If you want a large memory, it must be slower, located
+farther away from the CPU, and wired for access mediated through a memory
+bus.</p></li>
+<li><p><strong>Memory Bus</strong>: An electronic circuit for wiring chips together to exchange
+data, using addresses to select which data is currently being moved. CPUs
+use memory buses to connect to external devices, such as RAM chips and
+peripheral interfaces (network, USB, audio, video, …). MarkabForth uses
+virtual memory addresses as arguments to its <code>!</code> and <code>@</code> words (store and
+fetch) and with the Virtual CPU’s <code>Call</code> and <code>Jump</code> tokens.</p></li>
+<li><p><strong>Register</strong>: Registers are type of small and very fast memory built into a
+CPU or peripheral device. Registers are used to keep track of commonly
+needed, and often frequently changing, data. MarkabForth’s virtual CPU
+registers include <code>T</code> (top of data stack) and <code>R</code> (top of return stack),
+among others.</p></li>
+<li><p><strong>Random Access Memory</strong> (<strong>RAM</strong>): RAM is used to hold data beyond what will
+fit in a CPU’s registers or stacks. Accessing data stored in RAM is faster
+than accessing data stored on a disk but slower than data stored in
+registers. MarkabForth uses a virtual RAM chip for storing its dictionaries,
+terminal input buffer, variables, and compiled code (token code).</p></li>
+<li><p><strong>Stack Machine</strong>: Stack machines are a type of computer built around a CPU
+designed for passing data between subroutines using stacks. Forth is a very
+good fit for stack machines because the instruction set and architecture of a
+stack machine closely matches the core words needed to build a Forth system.</p></li>
+<li><p><strong>Stack</strong>: Stacks are a data structure used to access data in a “last in,
+first out” order. If you want to get data from a stack, you have to take the
+last item that was added to the stack. If you want to add data to a stack,
+you have to put that data on the top of the stack. This is different from
+Random Access Memory (RAM) where you can access any item you want, whenever
+you want, simply by telling the RAM chip which data you want by setting the
+address on your memory bus.</p>
+<p>In modern usage, “stack” usually refers to a large stack stored in RAM in
+the manner popularized by C compilers for modern operating systems. But,
+this is not what “stack” means in the context of Stack Machines for Forth.
+The stack size for a program compiled in C for a modern OS is likely to be
+on the order of 1MB to 8MB (1MB = 1,048,576 bytes). That’s big enough that
+the active stack memory will likely not fit in L1 cache of a recent-ish
+CPU.</p>
+<p>In the context of Stack Machines, such as the markabForth Virtual Machine,
+stacks are small, fast, and built into the CPU. Stack machine stacks, at
+least on real Forth chips, are fast like registers. Typically a Forth CPU
+will have, at minimum, a data stack (aka parameter stack) and a return stack.
+In recent stack CPUs of Chuck Moore’s design, the size is typically on the
+order of 16 items.</p>
+<p>In a virtual stack machine CPU with 16 data stack items and 16 return stack
+items stored in RAM, with each item taking 32 bits (4 bytes), the total RAM
+used for stack items would be 128 bytes. That’s small enough to easily fit
+into the L1 cache memory of a vaguely modern CPU, so it should be relatively
+fast compared to a large C-style stack.</p></li>
+<li><p><strong>L1 Cache</strong>: Modern CPUs use several tiers of memory to try to avoid the
+common situation where the CPU is ready to do work but it has to wait for
+data to become available in response to a request that it sent on the memory
+bus. Cache memory is built into the CPU, in a way that is slower to access
+compared to registers but faster compared to RAM. CPUs use cache memory to
+remember data that was recently accessed in RAM, in case they need to use it
+again. In the case of markabForth’s stacks, RAM for the stack items gets
+accessed frequently.</p>
+<p>Of the different types of cache memory, L1 cache typically refers to the
+fastest kind but with the smallest capacity. Algorithms that work with data
+mostly from L1 cache can run faster than algorithms that have to spend a lot
+of time accessing data in RAM or the other slower types of cache. Mostly this
+is a matter of using compact data structures and accessing data in RAM
+sequentially, rather than skipping all over the place following pointers.
+MarkabForth separates its memory areas for the dictionary linked lists and
+compiled token code, among other reasons, to help with cache locality.</p></li>
+<li><p><strong>Virtual Machine</strong> (<strong>VM</strong>): A Virtual Machine is virtual computer, with a
+virtual CPU, memory bus, and peripherals, where the behavior of the virtual
+hardware is emulated in software.</p></li>
+<li><p><strong>Word</strong>: In Forth usage, a word is a sequence of characters representing a
+number, the name of variable, or the name of a subroutine. Words are
+separated by whitespace. In this example of a line of input that could be
+typed at the markabForth shell prompt,</p>
+<pre><code>: do-math 1 2 + . ;</code></pre>
+<p>there are 7 words: <code>:</code>, <code>do-math</code>, <code>1</code>, <code>2</code>, <code>+</code>, <code>.</code>, and <code>;</code>.</p></li>
+<li><p><strong>Vocabulary</strong>: A linked list that contains names of words, along with other
+metadata that allows the Forth inner interpreter to make use of those words.
+Part of the concept of a Forth vocabulary is that you can switch which
+vocabulary is active depending on your current task. For example, some words
+only make sense in when compile mode is active, so they are included in the
+vocabulary for compiling, but not the vocabulary for interpreting.</p></li>
+<li><p><strong>Dictionary</strong>: The set of all vocabularies available in a Forth system, not
+all of which will be active at the same time.</p></li>
+<li><p><strong>Compile</strong>: To compile is to translate from Forth source code text to token
+code representing actions that can be performed by the inner interpreter. For
+example, suppose this string of input text is provided to the markabForth
+outer interpreter:</p>
+<pre><code>: some-word 1 2 do-stuff ;</code></pre>
+<p>The action for the <code>:</code> word is to enter compile mode and make a new
+dictionary entry to begin defining a word named <code>some-word</code>. In compile mode,
+<code>1</code> causes the compiler to add a byte representing the <code>U8</code> token, followed
+by a byte with the value <code>1</code> (argument to <code>U8</code> token), at the address in RAM
+for the compiled code. The <code>2</code> word compiles similarly. The <code>do-stuff</code> word
+will attempt to look <code>do-stuff</code> up in the dictionary, and if it is found, the
+compiler will insert the byte code for a <code>Call</code> token, followed by two bytes
+for the Virtual RAM address of the token code for <code>do-stuff</code> (argument to
+<code>Call</code> token). Finally, the <code>;</code> word, which ends a definition, will do a
+tail-call optimization to convert the <code>Call</code> token to a <code>Jump</code> token,
+finalize the dictionary entry, and exit compile mode.</p></li>
+<li><p><strong>Inner Interpreter</strong>: The inner interpreter implements the token-threading
+algorithm to translate lists of compiled token code (lists of tokens in the
+VM’s virtual RAM) into calls to token subroutines written in native assembly
+language for the host computer’s actual CPU. The inner interpreter is a layer
+of abstraction right on top of the Virtual CPU.</p></li>
+<li><p><strong>Outer Interpreter</strong>: The outer interpreter implements the algorithms to
+detect keystrokes (or UTF-8 from IME input), assemble those characters into a
+string of text, allow editing with Backspace, and then parse a line of input
+into words after you press the Enter key. The outer interpreter uses the
+dictionary and number parsing subroutine to translate words of input into a
+sequence of actions to be performed by the inner interpreter.</p></li>
+<li><p><strong>Parse</strong>: In the context of a Forth outer interpreter, parse means splitting
+a string of input text into words by looking for whitespace boundaries, then
+looking each word up in the dictionary to determine its meaning. For words
+not listed in the dictionary, parsing also includes an attempt to translate
+the word to an integer. For example, a string of digit characters, like
+<code>"1234"</code>, can be translated to the binary value for the integer <code>1234</code>.</p>
+<p>Parsing does not include performing the action denoted by a word that is the
+name of a subroutine or a variable – that is the job of the inner
+interpreter.</p></li>
+</ul>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
