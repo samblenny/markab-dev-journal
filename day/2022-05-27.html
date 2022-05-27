@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-05-27: Refactoring for new memory map</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-05-27: Refactoring for new memory map</h1>
+<hr><ul>
+<li><a href="#work-in-progress">Work in progress</a></li>
+<li><a href="#next-steps">Next steps</a></li>
+</ul><hr>
+<h2 id="work-in-progress">Work in progress</h2>
+<p>I’m working on a major refactor to arrange markabForth’s memory blocks for
+dictionaries, buffers, variables, and heap into a single coherent 64KB virtual
+memory space. This should allow me to begin writing compiler code directly in
+Forth, rather than doing everything the hard way in assembly.</p>
+<p>Currently, I’m about half way done, or maybe it’s really more like three
+quarters. It’s hard to tell. I’ve implemented the basic functionality for a
+memory map with macro definitions for address ranges and relative addressing
+with bounds checks. The main difference from before is that all my address
+pointers in the dictionary linked lists are now 16-bit and refer to offsets
+from the base of my 64KB virtual memory area.</p>
+<p>Two days ago, I finished enough of the changes to compile the main binary
+without assembler errors, but the shell was thoroughly broken. Formatting
+numbers to print the stack was a big problem, but I re-implemented the number
+formatter yesterday and it’s fine now. I also fixed it so invoking predefined
+words from the core vocabulary works again. But, the mechanism to define and
+invoke new words is currently broken. I’m working on that presently.</p>
+<p>My habit with git so far on this project has been to only commit and push
+changes when I reach a stopping point with working code and passing tests.
+Usually, that works for making a commit at the end of a day’s coding session
+because my changes are small-ish and incremental. This time, I’ve made a huge
+revision to foundational system architecture level stuff, so it’s taking longer
+than I would like to get the markabForth shell back to a working state with
+passing tests.</p>
+<p>I’m probably going to make a new branch today for my broken work-in-progress
+changes, then maybe do a squash commit to main once I have things working
+again, in however many days that takes.</p>
+<h2 id="next-steps">Next steps</h2>
+<p>One of my big goals with this refactor is to begin implementing features using
+Forth source code, rather than doing everything in assembly. By combining my
+previously separate address spaces for dictionary, variables, and compiled
+code, I’ve set the stage for using Forth code with <code>!</code> and <code>@</code> (store and
+fetch) to create data structures and blocks of compiled code.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
