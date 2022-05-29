@@ -87,8 +87,8 @@ loop, and it cannot directly access resources of the host OS.</p></li>
 <h2 id="next-steps">Next steps</h2>
 <p>Here’s my list of stuff that I think needs to happen relatively soon:</p>
 <ol type="1">
-<li><p>Implement new words for <code>CONSTANT</code>, <code>VARIABLE</code>, <code>ALLOT</code>, along with all the
-relevant interpreter and compiler support so I can start using named
+<li><p>Implement new words for <code>CONSTANT</code>, <code>VARIABLE</code>, and <code>ALLOT</code>, along with all
+the relevant interpreter and compiler support so I can start using named
 variables and constants.</p></li>
 <li><p>Extend my builtin vocabularies with constants for pointers and start offsets
 for important virtual memory regions and data structures (vocab linked
@@ -96,7 +96,7 @@ lists, text buffers, heap, etc). Currently, I’m managing this stuff with
 NASM assembler macro definitions that are not easily accessible from Forth
 at the moment.</p></li>
 <li><p>Be sure there is a safety feature in the dictionary search code so that
-creating a circularly linked dictionary list will not be able cause an
+creating a circularly linked dictionary list will not be able to cause an
 infinite loop.</p></li>
 <li><p>Split dictionary into non-linked vocabularies with priority searching from
 builtin vocabularies (Forth, Interpret, Compile). Priority is to make sure
@@ -118,13 +118,14 @@ long running loops.</p></li>
 <p>Once those things are working, perhaps I can move some of the interpreter,
 compiler, and assembler features from amd64 assembly language to Forth source
 code. My libmarkab.nasm assembly source file is getting outrageously long –
-over 2000 lines. I don’t scroll through it any more. My only viable way to
-navigate is with my editor’s search features (which is actually sorta convenient
-for refactoring). But, I need to reorganize libmarkab.nasm somehow.</p>
-<p>People won’t want to hassle with reading through 84KB long file of assembly
-source. And, I don’t want to hassle with porting all that to other
-architectures. My preference would be to move a lot of the functionality to
-Forth code so it will be easier to port the markabForth virtual machine to ARM,
+over 2000 lines. I can’t effectively scroll through it any more. My only viable
+way to navigate is by searching for labels with my editor (which is actually
+sorta convenient for refactoring). But, that isn’t sustainable.</p>
+<p>People won’t want to hassle with reading through an 84KB file of assembly
+source, and, I don’t want to hassle with porting it to other architectures. I
+need to reorganize libmarkab.nasm somehow. My preference would be to move a lot
+of the functionality to screens of Forth code so it will be easier to port the
+remaining assembler code for the markabForth virtual machine to ARM,
 WebAssembly or RISC-V.</p>
 </main><footer>
 Copyright (c) 2022 Sam Blenny
