@@ -1,0 +1,132 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-05-29: Progress: new memory map!</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-05-29: Progress: new memory map!</h1>
+<hr><ul>
+<li><a href="#the-big-refactor-is-done">The Big Refactor is done</a></li>
+<li><a href="#next-steps">Next steps</a></li>
+</ul><hr>
+<h2 id="the-big-refactor-is-done">The Big Refactor is done</h2>
+<p>For most of the last week, I’ve been working on a big refactor of markabForth’s
+memory layout, virtual memory addressing mechanisms, and compiling subroutines.
+It’s done. It works. The tests are all passing.</p>
+<p>The point of the refactor was to make it possible to implement compiler and
+dictionary features in markabForth source code, operating inside of the
+sandboxed markabForth virtual memory area. It’s a little tricky to explain
+exactly what I mean by that, and why I feel it’s important. Perhaps it would
+help to give examples of things I want to be possible in markabForth along with
+things that I want to be not possible. I believe the refactor supports the
+goals listed below.</p>
+<p>Things that should be possible:</p>
+<ol type="1">
+<li><p>No matter what happens with misbehaving Forth code, in spite of whatever
+mess or memory corruption occurs in the buffer and heap areas of virtual
+memory, the mechanism to type commands for the outer interpreter, using
+builtin words, should keep working. This will support convenient debugging
+and inspection of memory after problems.</p></li>
+<li><p>Forth code should be able to use, inspect, and extend the linked list data
+structure for the dictionary. Examining the linked lists for the builtin
+vocabularies should be possible with read-only access. Working with the
+extensible vocabulary in the heap area should be possible with read-write
+access.</p></li>
+<li><p>Using Forth code to extend the markabForth interpreters, assembler, and
+compiler should be possible. By writing more of such code in Forth rather
+than assembler, it will become easier to port the markabForth virtual
+machine to new host systems. Also, using this approach supports the
+traditional extensibility features of Forth – you get to define your own
+words to compile and use new types of data structures, control flow words,
+or whatever you want.</p></li>
+<li><p>Using Forth code to write debugging tools such as memory dumpers,
+disassemblers, and data structure inspectors should be possible, and it
+should be safely sandboxed. One consequence of this is that all the pointers
+for linked lists need to use the virtual address space of the markabForth
+virtual machine. It’s actually kinda nice because printouts of 16-bit
+pointers are much easier to manually follow compared to typical 64-bit
+pointers from a modern host OS.</p></li>
+</ol>
+<p>Things that should not be possible:</p>
+<ol type="1">
+<li><p>Forth code should not be able to directly access the memory space of the
+markabForth process on the host OS or to run arbitrary code – no segfaults,
+no stack smashing, no syscalls – none of that nonsense. This is a security
+measure intended to allow for a healthy community with sharing and archival
+of markabForth source code. Running markabForth code written by strangers
+should be a low-risk activity – hopefully, about as safe as opening and
+reading a plain text file. (yes, I know this is a difficult goal)</p></li>
+<li><p>It should be possible to write interesting Forth code, that might have
+serious bugs along the way, without crashing the markabForth interpreter or
+losing data. In particular, bugs should not result in losing code that is
+being edited. Have you seen the old DOS era PCs that came with giant reset
+buttons on the front? Or, on the old toaster Macs, a little plastic
+debugging insert that clipped into a ventilation slot? Those were necessary
+because it was too easy to corrupt memory and crash the whole system.</p>
+<p>I don’t want people writing Forth code for markabForth to have to worry
+about such things. Bugs, even serious memory corruptions, should result in
+an error message followed by the normal prompt from the outer interpreter so
+you can inspect what went wrong and debug it.</p>
+<p>Modern programming languages often address this sort of challenge with all
+sorts of complicated features for type-checking, concurrency management,
+memory protection, and such. All that stuff is a hassle. It’s not fun. The
+compiler always nags you. I want markabForth to let you make as much of a
+mess as you want in the heap area of its virtual memory space. That can
+include fancy trees, lists, or whatever sort of pointer-chasing mayhem you
+like. It can also include compiling and running token code, perhaps
+self-modifying, at runtime. But, the markabForth VM will sandbox that stuff
+so it cannot run for too long without passing control back to the event
+loop, and it cannot directly access resources of the host OS.</p></li>
+</ol>
+<h2 id="next-steps">Next steps</h2>
+<p>Here’s my list of stuff that I think needs to happen relatively soon:</p>
+<ol type="1">
+<li><p>Implement new words for <code>CONSTANT</code>, <code>VARIABLE</code>, <code>ALLOT</code>, along with all the
+relevant interpreter and compiler support so I can start using named
+variables and constants.</p></li>
+<li><p>Extend my builtin vocabularies with constants for pointers and start offsets
+for important virtual memory regions and data structures (vocab linked
+lists, text buffers, heap, etc). Currently, I’m managing this stuff with
+NASM assembler macro definitions that are not easily accessible from Forth
+at the moment.</p></li>
+<li><p>Be sure there is a safety feature in the dictionary search code so that
+creating a circularly linked dictionary list will not be able cause an
+infinite loop.</p></li>
+<li><p>Split dictionary into non-linked vocabularies with priority searching from
+builtin vocabularies (Forth, Interpret, Compile). Priority is to make sure
+the shell prompt works for builtins no matter what sort of memory corruption
+chaos has been happening in the heap, buffers, and compiler variables.
+It should not be allowed to redefine core words. Not sure about whether I
+should interfere with attempts to redefine the meaning of specific numbers.
+Probably that should not be allowed, but it depends on how difficult it
+would be to implement the restriction.</p></li>
+<li><p>Add some better control flow words for loops and conditional branching. This
+might include <code>IF</code> and something to create for-loops. I want to have a
+for-loop construct with a counted iteration limit. I don’t want a while-loop
+construct because coding patterns using unbounded loops are bad for
+real-time responsiveness. I want to encourage coding patterns that support
+low latency in a context of single-threaded, cooperative, non-preemptive
+multitasking. I want to avoid lag due to control flow getting blocked by
+long running loops.</p></li>
+</ol>
+<p>Once those things are working, perhaps I can move some of the interpreter,
+compiler, and assembler features from amd64 assembly language to Forth source
+code. My libmarkab.nasm assembly source file is getting outrageously long –
+over 2000 lines. I don’t scroll through it any more. My only viable way to
+navigate is with my editor’s search features (which is actually sorta convenient
+for refactoring). But, I need to reorganize libmarkab.nasm somehow.</p>
+<p>People won’t want to hassle with reading through 84KB long file of assembly
+source. And, I don’t want to hassle with porting all that to other
+architectures. My preference would be to move a lot of the functionality to
+Forth code so it will be easier to port the markabForth virtual machine to ARM,
+WebAssembly or RISC-V.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
