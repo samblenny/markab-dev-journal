@@ -1,0 +1,130 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-06-02: Variables, conditionals, and loops</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-06-02: Variables, conditionals, and loops</h1>
+<hr><ul>
+<li><a href="#progress-implementing-new-words">Progress implementing new words</a>
+<ul>
+<li><a href="#variables-and-constants-var-const">Variables and constants (VAR, CONST)</a></li>
+<li><a href="#conditionals-if..else..endif">Conditionals (IF..ELSE..ENDIF)</a></li>
+<li><a href="#loops-for..next">Loops (FOR..NEXT)</a></li>
+</ul></li>
+<li><a href="#rationale-why-only-for..next-loops">Rationale: Why only FOR..NEXT loops?</a></li>
+</ul><hr>
+<h2 id="progress-implementing-new-words">Progress implementing new words</h2>
+<p>I added several new words for variables, conditionals, and loops. For some of
+the words, my spellings for markabForth deviate from standard Forth because the
+traditional spellings are annoying. In particular, <code>THEN</code> from standard Forth
+has a semantic conflict with common usage in modern languages – I see no good
+reason to perpetuate that confusion in markabForth.</p>
+<p>I chose the spellings below because they will simplify writing documentation
+and tutorials for markabForth. Rather than having to write sidebars where I
+explain the surprising weirdness of words from standard Forth, I can just use
+words that are better aligned with common modern usage in languages people may
+likely already be familiar with.</p>
+<h3 id="variables-and-constants-var-const">Variables and constants (VAR, CONST)</h3>
+<ul>
+<li><p><code>VAR</code>: Declare a variable. For example,</p>
+<pre><code>VAR x  3 x !  x ? 3  OK</code></pre>
+<p>In standard Forth, this would be called <code>VARIABLE</code>, but the <code>var</code>
+abbreviation is common in modern usage and shorter to type.</p></li>
+<li><p><code>CONST</code>: Declare a constant. For example,</p>
+<pre><code>4 CONST y  y . 4  OK</code></pre>
+<p>In standard Forth, this would be called <code>CONSTANT</code>, but the <code>const</code>
+abbreviation is common in modern usage and shorter to type.</p></li>
+</ul>
+<h3 id="conditionals-if..else..endif">Conditionals (IF..ELSE..ENDIF)</h3>
+<ul>
+<li><p><code>IF</code>: Begin a conditional grouping where the words between <code>IF</code> and <code>ELSE</code>,
+or <code>IF</code> and <code>ENDIF</code> (when <code>ELSE</code> clause is omitted), will run only if the
+top of stack is 0. When value on top of stack is non-zero, the words between
+<code>ELSE</code> and <code>ENDIF</code> will run, assuming an <code>ELSE</code> clause is present. In any
+case, normal control flow resumes after the <code>ENDIF</code>. For example,</p>
+<pre><code>: zero? IF .&quot;  yes&quot; ELSE .&quot;  no&quot; ENDIF .&quot; _&quot; ;  OK
+-1 zero? no_  OK
+ 0 zero? yes_  OK
+ 1 zero? no_  OK
+: 5red? 5 = IF .&quot;  Red!&quot; ENDIF ;  OK
+0 5red?  OK
+4 5red?  OK
+5 5red? Red!  OK</code></pre></li>
+<li><p><code>ELSE</code>: Continue a conditional grouping introduced by <code>IF</code>. Words between
+<code>IF</code> and <code>ELSE</code> run when the condition is true (top of stack is 0). Words
+between <code>ELSE</code> and <code>ENDIF</code> run when the condition is false (top of stack is
+non-zero).</p></li>
+<li><p><code>ENDIF</code>: Finish a conditional grouping of words, introduced by <code>IF</code>, and
+possibly including an `ELSE.</p>
+<p>In standard Forth, <code>THEN</code> is used to end an <code>IF</code> grouping. That historical
+accident has a legitimate reason (see <code>/HOPL.html</code> in an archive of the old
+ColorForth website). But, I don’t care to perpetuate its confusing weirdness.
+Using <code>ENDIF</code> works just as well without contradicting the usage of <code>then</code>
+that is common in modern languages from the lineage of ALGOL, C, Simula, and
+Pascal. In that tradition, conditionals take the form of</p>
+<pre><code>if &lt;condition-expression&gt; then &lt;true-block&gt; else &lt;false-block&gt;</code></pre>
+<p>where <code>then</code> may be optional or implicit (e.g. <code>)</code> in C, <code>:</code> in Python), and
+the block boundaries are indicated with <code>{..}</code>, <code>begin..end;</code>, indentation,
+or the like.</p></li>
+</ul>
+<h3 id="loops-for..next">Loops (FOR..NEXT)</h3>
+<p>Looping is a bit different. I’ve adopted the <code>FOR..NEXT</code> counted loop construct
+from ColorForth because it’s quite nice and fits well with my ideas about good
+ways of looping to avoid bugs and timing glitches.</p>
+<ul>
+<li><p><code>FOR</code>: Begin a grouping of words that repeat in a counted loop. <code>FOR</code> moves
+the top item of the data stack to the top of the return stack, where it is
+kept as a loop counter. Within the loop, the word <code>I</code> can be used to push a
+copy of the loop counter to the top of the data stack. The loop counter
+starts at the number that <code>FOR</code> took from the top of the stack, then
+continues down to 0. The counting acts like <code>for(int i=n; i&gt;=0; i--){...}</code> in
+C. For example,</p>
+<pre><code>: nTo0 .&quot;   n:&quot; dup . .&quot;  {&quot; FOR i . NEXT .&quot;  }&quot; ;  OK
+1 nTo0  n: 1 { 1 0 }  OK
+2 nTo0  n: 2 { 2 1 0 }  OK
+3 nTo0  n: 3 { 3 2 1 0 }  OK</code></pre></li>
+<li><p><code>NEXT</code>: End a grouping of words that repeat in a counted loop. <code>NEXT</code> checks
+the loop counter (top of return stack) to see if it is zero. If so, the loop
+ends, which means <code>NEXT</code> removes the loop counter from the return stack and
+lets control flow move to the word following <code>NEXT</code>. If the loop counter is
+not zero, <code>NEXT</code> subtracts 1 from the loop counter and moves control flow
+back to the word following <code>FOR</code>.</p></li>
+</ul>
+<h2 id="rationale-why-only-for..next-loops">Rationale: Why only FOR..NEXT loops?</h2>
+<p>Looping can have a big impact on overall system performance, so it is important
+to approach it with due care and respect. I want markabForth to be usable as a
+tool for live performance. Audio should not glitch. Animation should not
+jitter. The system should not randomly lock up in the middle of a performance.</p>
+<p>Choice of looping constructs is one area where markabForth favors coding
+practices from the programming tradition of safety-critical embedded systems. I
+don’t expect markabForth to be used in vehicles or medical devices. But,
+properties which make cars and pacemakers safe are also good for glitch-free
+real-time multi-media performance.</p>
+<p>In both cases, it is important to have a low latency event loop, where you
+don’t have to worry about unpredictable timing. You want each event handler
+task to finish quickly and return control flow to the main event loop. In that
+way, the whole system stays responsive without glitches or jitter.</p>
+<p>I’m a fan of Gerard J. Holzmann’s
+<a href="https://en.wikipedia.org/wiki/The_Power_of_10:_Rules_for_Developing_Safety-Critical_Code">The Power of 10: Rules</a>
+for developing safety-critical code. In particular, rule 2, which says
+approximately, “use for-loops, not while-loops”, is useful for preventing an
+entire category of bugs that can cause timing glitches or system lockups.</p>
+<p>The idea is, if you limit yourself to using for-loops, where a counter imposes
+a hard limit on the maximum number of iterations, you don’t have to worry about
+infinite loops causing control flow to get stuck. With for-loops, the worst
+consequence of a logic error deciding when to exit the loop is that, for
+example, maybe your loop runs for 6,000 iterations, when you meant it to do 20
+iterations at most. The thing that doesn’t happen – which is the whole point
+– is that control flow does not get stuck forever in the buggy loop, causing
+your whole system to freeze up until somebody resets it.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
