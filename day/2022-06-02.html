@@ -121,8 +121,8 @@ a hard limit on the maximum number of iterations, you don’t have to worry abou
 infinite loops causing control flow to get stuck. With for-loops, the worst
 consequence of a logic error deciding when to exit the loop is that, for
 example, maybe your loop runs for 6,000 iterations, when you meant it to do 20
-iterations at most. The thing that doesn’t happen – which is the whole point
-– is that control flow does not get stuck forever in the buggy loop, causing
+iterations at most. The guarantee you get from this – which is the whole point
+– is that control flow will not get stuck forever in the buggy loop, causing
 your whole system to freeze up until somebody resets it.</p>
 </main><footer>
 Copyright (c) 2022 Sam Blenny
