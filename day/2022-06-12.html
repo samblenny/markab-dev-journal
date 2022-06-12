@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-06-12: Python VM is done-ish</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-06-12: Python VM is done-ish</h1>
+<p>I’ve been more in building mode than writing mode for the past week. Or,
+rather, the writing efforts have gone into code, README updates, and commit
+message mini-essays.</p>
+<p>Two main developments:</p>
+<ol type="1">
+<li><p>I’ve been building a virtual machine emulator in Python for a stack machine
+CPU with text console IO. The VM mostly works now with a fairly complete set
+of opcodes and moderately comprehensive tests. There are some things I
+intend to change and extend. But, for now, the VM is good enough to start
+working on a kernel and assembler. For the tests, I’ve been assembling by
+hand, including calculating addresses for jumps and branches.</p></li>
+<li><p>I’ve been contemplating how to articulate what Markab is about as a project,
+and who it’s intended for. Going forward, I plan to be more clear with
+communicating that Markab is an art project. I’m building a VM and a
+Forth-like language because I want those tools to help me make the work I
+want to make, as part of an art practice.</p>
+<p>Also, I’ve decided to abandon any pretense of attempting to follow
+traditional Forth naming conventions or standards. I will continue using
+system architecture design elements from the Forth tradition: data and
+return stacks, the dictionary, inner and outer interpreters, and so on. But,
+I will go my own way with naming of words. I plan to borrow math and logic
+operator naming from C. The rest is to be determined.</p></li>
+</ol>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
