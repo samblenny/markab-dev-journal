@@ -1,0 +1,44 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-06-13: Thoughts on immediate words</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-06-13: Thoughts on immediate words</h1>
+<p>I’ve been thinking about immediate words as part of trying to define a good set
+of core words for Markab. The benefit of immediate words is that they make it
+possible for a simple compiler to provide high-level language features.</p>
+<p>Immediate words are one of Chuck Moore’s design innovations which are simple
+and extremely useful, yet also subtle and confusing. This is one of the areas
+in reading old Forth books where it has taken me a lot of effort to understand.
+Achieving the perspective to appreciate the simplicity is tricky. Understanding
+it well enough implement a compiler and define new immediate words is hard.</p>
+<p>The essential property of an immediate word is that, when included in the
+definition of a new word, it causes the compiler to run some of the immediate
+word’s code at compile time. The compile time code gets to use the stack and
+CPU to calculate and decide what should go into the dictionary entry that is
+being compiled. So, the immediate word’s compile time code gets to determine
+what the behavior of its runtime code should be.</p>
+<p>For example, this mechanism allows for conditional blocks where, at compile
+time while defining a word such as <code>: three? 3 = if{ do stuff }if ;</code>:</p>
+<ol type="1">
+<li><p><code>if{</code> compiles a jump instruction with a temporary address into the
+dictionary, then pushes a pointer to the that address onto the data stack</p></li>
+<li><p><code>}if</code> at the end of the conditional block calculates the correct jump
+address, pops the pointer to the temporary address (pushed by <code>if{</code>), then
+patches the temporary address with the correct calculated address.</p></li>
+</ol>
+<p>Many other things are possible using the immediate word mechanism. If you want
+the compiler to support some new control flow construct or data structure, you
+can define new immediate words to make that happen. You don’t have to change
+the language specification or the compiler.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
