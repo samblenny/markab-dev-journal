@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-06-21: Progress on Markab kernel</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-06-21: Progress on Markab kernel</h1>
+<hr><ul>
+<li><a href="#summary-of-recent-work">Summary of recent work</a></li>
+<li><a href="#markab-kernel">Markab kernel</a></li>
+<li><a href="#next-steps">Next steps</a></li>
+</ul><hr>
+<h2 id="summary-of-recent-work">Summary of recent work</h2>
+<p>Things I did since my last update:</p>
+<ul>
+<li><p>Hand-assemble a hello-world rom (it works)</p></li>
+<li><p>Revise Markab VM opcodes and the corresponding Markab core vocab words, to
+make string processing loops more convenient. This includes instructions for
+using registers <code>A</code> and <code>B</code> to work with auto-incrementing addresses,
+registers <code>X</code> and <code>Y</code> to work with temporary values, and some looping stuff.</p></li>
+<li><p>Revise my emacs and vim syntax highlighting plugins to keep pace with the
+opcode and core vocab changes.</p></li>
+<li><p>Write a bunch of Markab language code for the Markab kernel and compiler.
+This is part of bootstrapping the kernel, so I can’t actually run or test any
+of this code yet.</p></li>
+</ul>
+<h2 id="markab-kernel">Markab kernel</h2>
+<p>For now, what I’m calling the kernel is perhaps a bit broader in scope than
+what is typically included in a traditional Forth kernel. I may end up
+refactoring some of this stuff out into libraries once I get it all up and
+running.</p>
+<p>What I have so far:</p>
+<ul>
+<li><p>Outer Interpreter words: <code>outer</code> <code>readline</code> <code>dowords</code> <code>word</code> <code>find</code> <code>number</code></p></li>
+<li><p>Defining words: <code>var</code> <code>const</code> <code>opcode</code> <code>create</code> <code>:</code> <code>;</code> <code>here</code> <code>allot</code> <code>,</code>
+<code>h,</code> <code>w,</code></p></li>
+<li><p>Branching words: <code>if{</code> <code>}if</code> <code>for{</code> <code>}for</code></p></li>
+<li><p>String and IO words: <code>hex</code> <code>decimal</code> <code>space</code> <code>cr</code> <code>strcmp</code> <code>."</code> <code>.dp</code></p></li>
+<li><p>Auto-generated words: constants for opcodes, constants for memory map areas,
+and opcode definitions for core words that map directly to a single VM opcode</p></li>
+</ul>
+<p>The main thing I lack is an inner interpreter to run the opcodes and threaded
+code from dictionary entries.</p>
+<h1 id="next-steps">Next steps</h1>
+<p>Once I finish implementing my first draft of the kernel, I need to compile it.
+I want to make Markab self-hosting, meaning that a rom of the Markab kernel
+should be able to load a compiler and re-compile itself from source code into a
+new rom.</p>
+<p>To start that chain of compilation, I need a bootstrap compiler. As far as I
+can tell, the traditional methods to bootstrap a new Fourth(-like) system are:</p>
+<ol type="1">
+<li><p>“Meta-compile” a new kernel using an existing Forth system</p></li>
+<li><p>Hand-assemble a new kernel from scratch (you become a human compiler)</p></li>
+</ol>
+<p>Both of those methods suffer from the problem of inscrutability for people who
+are not already Forth implementation experts. So far, the few references and
+examples I’ve encountered about bootstrapping a Forth(-like) system fall
+solidly into the category of “woah, this is super mysterious”. I would like
+Markab’s bootstrapping process to be legible and well documented so that people
+can understand it with a reasonable level of effort.</p>
+<p>With that in mind, I’m tentatively planning to write a bootstrap compiler in
+Python, then use the resulting rom to complete the self-hosting process by
+recompiling itself.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
