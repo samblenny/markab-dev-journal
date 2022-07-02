@@ -1,0 +1,110 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-07-02: Working towards self-hosting</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-07-02: Working towards self-hosting</h1>
+<hr><ul>
+<li><a href="#recap">Recap</a></li>
+<li><a href="#kernel-and-bootstrap-compiler-work">Kernel and bootstrap compiler work</a></li>
+<li><a href="#profiling-and-speed-improvements">Profiling and speed improvements</a></li>
+<li><a href="#toward-self-hosted-compilation">Toward self-hosted compilation</a></li>
+<li><a href="#next-steps">Next steps</a></li>
+</ul><hr>
+<h2 id="recap">Recap</h2>
+<p>In my last update, I had the Markab VM working for a hello world rom, and I
+was getting started with source code for the Markab kernel rom.</p>
+<h2 id="kernel-and-bootstrap-compiler-work">Kernel and bootstrap compiler work</h2>
+<p>Since last time, I wrote a bootstrap compiler in Python to transform Markab
+language source code for a kernel into a rom image that runs on the Markab VM.
+I haven’t quite figured out suitable terminology for talking about the kernel
+and the closely related compiler which lives in the same source file. I feel
+like I need to factor them apart, but I would first need to add support for
+searching multiple vocabularies. So, for now, the kernel and compiler are
+smushed together and I refer to them awkwardly.</p>
+<p>The kernel/compiler includes:</p>
+<ul>
+<li>Outer interpreter to parse text input and look up words in dictionary</li>
+<li>Inner interpreter to run words as direct-threaded code</li>
+<li><code>: ... ;</code> colon definitions to compile new words</li>
+<li>Tail call optimizer for saving code space and doing tail recursive loops</li>
+<li>Compiling conditional blocks with <code>if{ ... }if</code></li>
+<li>Compiling counted loops with <code>for{ ... }for</code></li>
+<li>Compiling of core words, constants, and variables</li>
+</ul>
+<p>Along the way, I also built several debugging features:</p>
+<ul>
+<li>Symbol table generation by bootstrap compiler</li>
+<li>Instruction tracing in the VM using the symbol table</li>
+<li>Memory range dumping</li>
+<li>A new error code printing mechanism</li>
+</ul>
+<p>Some other changes:</p>
+<ul>
+<li>Simpler memory map</li>
+<li>Several revisions to the VM instruction set to streamline common instruction
+sequences, such as for-loops</li>
+<li>New test fixture for compiling code in the VM (vs. with bootstrap compiler)</li>
+</ul>
+<h2 id="profiling-and-speed-improvements">Profiling and speed improvements</h2>
+<p>Once I got the kernel and compiler working well enough to write tests of code
+compiled in the VM, I wasn’t happy with the speed. The bootstrap compiler is
+very fast, but compiling just three test words in the VM initially took almost
+two seconds.</p>
+<p>Using Python’s <code>cProfile</code> profiler, I was able to eliminate or replace some
+slow function calls in the VM. Much of the time seems to be spent on dictionary
+lookups, so I tried to optimize hotspots in that code path. I got a big speed
+boost from re-writing my Markab code for string matching. I got a smaller but
+still noticeable boost from frequency-sorting the words in my core vocabulary.
+The current kernel rom tests run in about 600ms, down from about 1900ms before
+I started the optimizations.</p>
+<p>I expect that I can get a substantial additional speed boost by changing the
+dictionary data structure from a linked list to a hashmap. With that in mind, I
+made a little Python script to evaluate some string hashing functions. My core
+vocabulary currently has 163 entries. By my estimate, using a simple polynomial
+hash with 128, 64, or 32 buckets would reduce the worst case dictionary search
+list length for my current dictionary to 4, 7, or 12 items, respectively.</p>
+<p>For now, I am going to leave the dictionary data structure alone and focus on
+getting the kernel/compiler in good shape to do a self-hosted compile.</p>
+<h2 id="toward-self-hosted-compilation">Toward self-hosted compilation</h2>
+<p>To validate that my kernel and compiler are up to a useful level of
+functionality, I plan to do a self-hosted compile of the kernel. I’m working
+toward using the kernel compiler to compile another instance of itself from
+source into a rom image file.</p>
+<p>Some of the things I need to reach that goal include:</p>
+<ol type="1">
+<li><p>Convert the VM’s branch and jump instructions to use relative addressing.
+This will let me compile object code for the new kernel into a different
+address range relative to where it will eventually be loaded from the rom
+file. I’m currently part way through this conversion.</p></li>
+<li><p>Add some sort of file IO capability to the VM with suitable instruction
+opcodes and Markab core words to access it. I’m not sure yet how I want to
+do this. I definitely want some kind of sandboxing to prevent arbitrary
+filesystem access, but I’m not sure about the rest.</p></li>
+<li><p>Extend the kernel’s outer interpreter and compiling words to handle more
+than one active vocabulary. While compiling the new kernel vocabulary, I
+need to be able to use words from the current kernel’s vocabulary. But, the
+new kernel’s vocabulary cannot include any compiled dependencies on words
+from the current kernel’s vocabulary. I’m not sure yet how I want to do
+this.</p></li>
+<li><p>Add lots of tests</p></li>
+</ol>
+<h2 id="next-steps">Next steps</h2>
+<p>Once I get self-hosted compilation working and tested, I will probably convert
+the dictionary from linked list to hashmap. If compilation speed is too slow
+while I work toward self-hosting, I may do the hashmap thing sooner.</p>
+<p>Once self-hosting and the hashmap dictionary are done, I will probably add core
+words and VM opcodes for raster graphics and a pointing device. On the other
+hand, if compilation is still annoyingly slow after re-working the dictionary,
+I might instead start working on a faster VM in C or assembly.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
