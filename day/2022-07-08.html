@@ -1,0 +1,76 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-07-08: Getting close to self-hosting</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-07-08: Getting close to self-hosting</h1>
+<hr><ul>
+<li><a href="#progress-on-relative-addressing">Progress on relative addressing</a></li>
+<li><a href="#split-dictionary-with-hashmaps">Split dictionary with hashmaps</a></li>
+<li><a href="#compiling-the-kernel-with-cat">Compiling the kernel with cat</a></li>
+</ul><hr>
+<h2 id="progress-on-relative-addressing">Progress on relative addressing</h2>
+<p>Since last update, I converted the Markab VM <code>BZ</code>, <code>BFOR</code>, <code>JAL</code>, and <code>CALL</code>
+instructions to use program counter relative addressing. This means the code
+for compiled words can be relocated to a different address in memory and still
+work.</p>
+<h2 id="split-dictionary-with-hashmaps">Split dictionary with hashmaps</h2>
+<p>I converted my previous single linked-list dictionary into two vocabularies,
+each with its own hashmap. As I had been hoping, the hashmaps make compiling in
+the VM much faster. I’ve arranged it so that the kernel rom image includes the
+hashmap for the core vocabulary. The core vocabulary hashmap allows <code>find</code> to
+locate jump addresses for all the words in the kernel and compiler. The <code>boot</code>
+word then creates a second hashmap at runtime for the extensible vocabulary.
+The extensible vocabulary’s hashmap holds jump addresses to words that are
+defined after the kernel is running in the VM.</p>
+<p>Over the past week, I spent a lot of time working on a C program to brute-force
+search through combinations of parameters and bin counts to use for string hash
+functions. It wasn’t obvious at first how to rank the results, but I settled on
+sorting results in ascending order first by the maximum number of hash
+collisions, then by the count of bins with a collision frequency above the
+median collision frequency.</p>
+<p>In the core and extensible vocabulary hashmaps, each of 64 bins holds a pointer
+to the head item of that bin’s linked list. Currently, the kernel has 166
+words. The core vocabulary’s maximum list length for a bin is 4, and the median
+is 3.</p>
+<p>For now, the linked lists for hashmap bins use absolute addresses. So, if I
+were to copy the memory region for the extensible vocabulary into a rom file,
+it would not work when loaded into low memory. The code for compiled words
+would be fine, but the hashmap’s linked-list addresses would be wrong.
+Converting the hashmap list links to relative addressing is one of the last
+remaining tasks to complete a self-hosted build of the kernel and compiler.</p>
+<h2 id="compiling-the-kernel-with-cat">Compiling the kernel with cat</h2>
+<p>For the moment, instead of adding file IO to the Markab VM, I’ve been using
+the <code>cat</code> shell command to pipe markab source code into a VM instance running
+the kernel. It seems to work fine. My make target for <code>make selfhost</code> does:</p>
+<pre><code>cat mkb_autogen.mkb kernel.mkb | ./markab_vm.py</code></pre>
+<p>Since I fixed a bug with comment handling, <code>make selfhost</code> seems to work. But,
+working only means that all the words are getting compiled into the extensible
+vocabulary. I still need to make the hashmap link addresses relocatable, and I
+still need to devise a way of exporting the extensible vocabulary’s memory
+region to a file.</p>
+<p>I could build file IO into the kernel, but I’m tempted to just use a hexdump
+for the export. For that to work, I would need an additional tool to convert
+the hexdump to a binary rom image file. Something like using the <code>xxd</code> command
+line utility, invoked as <code>xxd -r -p kernel.hex kernel.rom</code> might work well.</p>
+<p>Using the approach of exporting rom images as hexdumps printed to standard
+output would have interesting tradeoffs. One advantage is, it would be
+convenient to compile rom images using unix style text processing without
+getting bogged down in platform-specific file IO details.</p>
+<p>Exporting roms as hexdumps would bypass the need for a sandboxing mechanism to
+make file IO safer, and sandboxing file IO is a non-trivial task. The safest
+file IO is no file IO, right? Of course, the major disadvantage of no file IO
+is that you have no file IO, which is a non-trivial disadvantage. Perhaps using
+hexdumps with xxd could be a good starting point to let me focus on getting the
+self-hosting compile working without bogging down in file IO.</p>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+</footer></body></html>
