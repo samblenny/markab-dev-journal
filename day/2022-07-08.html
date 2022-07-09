@@ -15,6 +15,7 @@ SPDX-License-Identifier: CC-BY-NC-SA-4.0
 <li><a href="#progress-on-relative-addressing">Progress on relative addressing</a></li>
 <li><a href="#split-dictionary-with-hashmaps">Split dictionary with hashmaps</a></li>
 <li><a href="#compiling-the-kernel-with-cat">Compiling the kernel with cat</a></li>
+<li><a href="#next-steps">Next steps</a></li>
 </ul><hr>
 <h2 id="progress-on-relative-addressing">Progress on relative addressing</h2>
 <p>Since last update, I converted the Markab VM <code>BZ</code>, <code>BFOR</code>, <code>JAL</code>, and <code>CALL</code>
@@ -70,6 +71,16 @@ file IO is no file IO, right? Of course, the major disadvantage of no file IO
 is that you have no file IO, which is a non-trivial disadvantage. Perhaps using
 hexdumps with xxd could be a good starting point to let me focus on getting the
 self-hosting compile working without bogging down in file IO.</p>
+<h2 id="next-steps">Next steps</h2>
+<p>My todo list for to finish a self-hosting compile:</p>
+<ol type="1">
+<li><p>Convert the hashmap linked-lists to using relative addressing</p></li>
+<li><p>Get extensible vocab rom image export working with a hexdump</p></li>
+<li><p>Make a script or makefile target for converting a rom image hexdump to
+a binary rom image file</p></li>
+<li><p>Do a self-hosted compile, diff the self-hosted rom against the bootstrap
+compiler’s rom, and resolve any differences</p></li>
+</ol>
 </main><footer>
 Copyright (c) 2022 Sam Blenny
  — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
