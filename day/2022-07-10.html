@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-07-10: Starting an Atom feed</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-07-10: Starting an Atom feed</h1>
+<hr><ul>
+<li><a href="#old-site-generator-workflow">Old site generator workflow</a></li>
+<li><a href="#new-workflow-with-atom-feed">New workflow with Atom feed</a></li>
+</ul><hr>
+<h2 id="old-site-generator-workflow">Old site generator workflow</h2>
+<p>My existing markdown to html workflow went like this:</p>
+<ol type="1">
+<li><p>Start a new journal entry by using the <code>day/new-entry.sh</code> shell script to
+automatically name a Markdown file with the current date and fill in some
+metadata and template stuff. The script also updates my main index file.</p></li>
+<li><p>Write my entry in Markdown.</p></li>
+<li><p>Run <code>make</code> to have Pandoc generate html using the <code>pandoc_template.html</code>
+template.</p></li>
+<li><p>Preview using the local web server ruby script, <code>/webserver.rb</code>.</p></li>
+<li><p>Commit and push to GitHub, which causes the static html to be published on
+GitHub Pages.</p></li>
+</ol>
+<h2 id="new-workflow-with-atom-feed">New workflow with Atom feed</h2>
+<p>To publish an Atom feed, I’ve added a Python script, <code>day/feed.py</code>, that gets
+invoked by <code>make</code> to construct the Atom feed with the help of Pandoc. The feed
+script works like this:</p>
+<ol type="1">
+<li><p>Look in the current working directory for files with names ending in <code>.md</code>.
+In those files, look for a YAML metadata section that contains the date,
+copyright and link fields needed for the <code>day/atom_template.html</code> pandoc
+template. (my older journal entries only have a “title” metadata field)</p></li>
+<li><p>Filter the Markdown files with the full set of metadata fields to select the
+10 most recent journal entries.</p></li>
+<li><p>For each of the 10 most recent entries, invoke Pandoc to convert the Markdown
+file into an xhtml serialized HTML5 fragment, enclosed in some additional
+xml to form an xml fragment for a full Atom entry. This uses the template
+at <code>day/atom_template.html</code>, and the html extension is important for telling
+Pandoc which rendering option to use (HTML5).</p></li>
+<li><p>Insert the Atom entry xml fragments into another template to form the full
+Atom feed (this template is a string in <code>day/feed.py</code>.</p></li>
+<li><p>Save the Atom feed xml to <code>/feed.atom</code>. The <code>.atom</code> file extension is
+important to make GitHub pages serve the file with the right content-type
+header.</p></li>
+</ol>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+ — [<a href="../feed.atom">RSS/Atom</a>]
+</footer></body></html>

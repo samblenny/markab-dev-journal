@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+ <title>Markab Dev Journal</title>
+ <link href="https://samblenny.github.io/markab-dev-journal/feed.atom" rel="self" />
+ <link href="https://samblenny.github.io/markab-dev-journal/" />
+ <id>https://samblenny.github.io/markab-dev-journal/feed.atom</id>
+ <author><name>Sam Blenny</name></author>
+ <updated>2022-07-10T06:13Z</updated>
+
+<entry>
+ <title>2022-07-10: Starting an Atom feed</title>
+ <link rel="alternate" type="text/html" href=""/>
+ <id>https://samblenny.github.io/markab-dev-journal/2022-07-10.html</id>
+ <published>2022-07-10T04:18Z</published>
+ <updated>2022-07-10T04:18Z</updated>
+ <rights>Copyright (c) 2022 Sam Blenny</rights>
+ <content type="xhtml">
+<div xmlns="http://www.w3.org/1999/xhtml">
+<h1>2022-07-10: Starting an Atom feed</h1>
+<h2 id="old-site-generator-workflow">Old site generator workflow</h2>
+<p>My existing markdown to html workflow went like this:</p>
+<ol type="1">
+<li><p>Start a new journal entry by using the <code>day/new-entry.sh</code> shell script to
+automatically name a Markdown file with the current date and fill in some
+metadata and template stuff. The script also updates my main index file.</p></li>
+<li><p>Write my entry in Markdown.</p></li>
+<li><p>Run <code>make</code> to have Pandoc generate html using the <code>pandoc_template.html</code>
+template.</p></li>
+<li><p>Preview using the local web server ruby script, <code>/webserver.rb</code>.</p></li>
+<li><p>Commit and push to GitHub, which causes the static html to be published on
+GitHub Pages.</p></li>
+</ol>
+<h2 id="new-workflow-with-atom-feed">New workflow with Atom feed</h2>
+<p>To publish an Atom feed, I’ve added a Python script, <code>day/feed.py</code>, that gets
+invoked by <code>make</code> to construct the Atom feed with the help of Pandoc. The feed
+script works like this:</p>
+<ol type="1">
+<li><p>Look in the current working directory for files with names ending in <code>.md</code>.
+In those files, look for a YAML metadata section that contains the date,
+copyright and link fields needed for the <code>day/atom_template.html</code> pandoc
+template. (my older journal entries only have a “title” metadata field)</p></li>
+<li><p>Filter the Markdown files with the full set of metadata fields to select the
+10 most recent journal entries.</p></li>
+<li><p>For each of the 10 most recent entries, invoke Pandoc to convert the Markdown
+file into an xhtml serialized HTML5 fragment, enclosed in some additional
+xml to form an xml fragment for a full Atom entry. This uses the template
+at <code>day/atom_template.html</code>, and the html extension is important for telling
+Pandoc which rendering option to use (HTML5).</p></li>
+<li><p>Insert the Atom entry xml fragments into another template to form the full
+Atom feed (this template is a string in <code>day/feed.py</code>.</p></li>
+<li><p>Save the Atom feed xml to <code>/feed.atom</code>. The <code>.atom</code> file extension is
+important to make GitHub pages serve the file with the right content-type
+header.</p></li>
+</ol>
+</div>
+ </content>
+ <author>
+  <name>Sam Blenny</name>
+ </author>
+</entry>
+
+<entry>
+ <title>2022-07-08: Getting close to self-hosting</title>
+ <link rel="alternate" type="text/html" href=""/>
+ <id>https://samblenny.github.io/markab-dev-journal/2022-07-08.html</id>
+ <published>2022-07-08T00:00Z</published>
+ <updated>2022-07-08T00:00Z</updated>
+ <rights>Copyright (c) 2022 Sam Blenny</rights>
+ <content type="xhtml">
+<div xmlns="http://www.w3.org/1999/xhtml">
+<h1>2022-07-08: Getting close to self-hosting</h1>
+<h2 id="progress-on-relative-addressing">Progress on relative addressing</h2>
+<p>Since last update, I converted the Markab VM <code>BZ</code>, <code>BFOR</code>, <code>JAL</code>, and <code>CALL</code>
+instructions to use program counter relative addressing. This means the code
+for compiled words can be relocated to a different address in memory and still
+work.</p>
+<h2 id="split-dictionary-with-hashmaps">Split dictionary with hashmaps</h2>
+<p>I converted my previous single linked-list dictionary into two vocabularies,
+each with its own hashmap. As I had been hoping, the hashmaps make compiling in
+the VM much faster. I’ve arranged it so that the kernel rom image includes the
+hashmap for the core vocabulary. The core vocabulary hashmap allows <code>find</code> to
+locate jump addresses for all the words in the kernel and compiler. The <code>boot</code>
+word then creates a second hashmap at runtime for the extensible vocabulary.
+The extensible vocabulary’s hashmap holds jump addresses to words that are
+defined after the kernel is running in the VM.</p>
+<p>Over the past week, I spent a lot of time working on a C program to brute-force
+search through combinations of parameters and bin counts to use for string hash
+functions. It wasn’t obvious at first how to rank the results, but I settled on
+sorting results in ascending order first by the maximum number of hash
+collisions, then by the count of bins with a collision frequency above the
+median collision frequency.</p>
+<p>In the core and extensible vocabulary hashmaps, each of 64 bins holds a pointer
+to the head item of that bin’s linked list. Currently, the kernel has 166
+words. The core vocabulary’s maximum list length for a bin is 4, and the median
+is 3.</p>
+<p>For now, the linked lists for hashmap bins use absolute addresses. So, if I
+were to copy the memory region for the extensible vocabulary into a rom file,
+it would not work when loaded into low memory. The code for compiled words
+would be fine, but the hashmap’s linked-list addresses would be wrong.
+Converting the hashmap list links to relative addressing is one of the last
+remaining tasks to complete a self-hosted build of the kernel and compiler.</p>
+<h2 id="compiling-the-kernel-with-cat">Compiling the kernel with cat</h2>
+<p>For the moment, instead of adding file IO to the Markab VM, I’ve been using
+the <code>cat</code> shell command to pipe markab source code into a VM instance running
+the kernel. It seems to work fine. My make target for <code>make selfhost</code> does:</p>
+<pre><code>cat mkb_autogen.mkb kernel.mkb | ./markab_vm.py</code></pre>
+<p>Since I fixed a bug with comment handling, <code>make selfhost</code> seems to work. But,
+working only means that all the words are getting compiled into the extensible
+vocabulary. I still need to make the hashmap link addresses relocatable, and I
+still need to devise a way of exporting the extensible vocabulary’s memory
+region to a file.</p>
+<p>I could build file IO into the kernel, but I’m tempted to just use a hexdump
+for the export. For that to work, I would need an additional tool to convert
+the hexdump to a binary rom image file. Something like using the <code>xxd</code> command
+line utility, invoked as <code>xxd -r -p kernel.hex kernel.rom</code> might work well.</p>
+<p>Using the approach of exporting rom images as hexdumps printed to standard
+output would have interesting tradeoffs. One advantage is, it would be
+convenient to compile rom images using unix style text processing without
+getting bogged down in platform-specific file IO details.</p>
+<p>Exporting roms as hexdumps would bypass the need for a sandboxing mechanism to
+make file IO safer, and sandboxing file IO is a non-trivial task. The safest
+file IO is no file IO, right? Of course, the major disadvantage of no file IO
+is that you have no file IO, which is a non-trivial disadvantage. Perhaps using
+hexdumps with xxd could be a good starting point to let me focus on getting the
+self-hosting compile working without bogging down in file IO.</p>
+<h2 id="next-steps">Next steps</h2>
+<p>My todo list to finish self-hosted compiling:</p>
+<ol type="1">
+<li><p>Convert the hashmap linked-lists to using relative addressing</p></li>
+<li><p>Get extensible vocab rom image export working with a hexdump</p></li>
+<li><p>Make a script or makefile target for converting a rom image hexdump to
+a binary rom image file</p></li>
+<li><p>Do a self-hosted compile, diff the self-hosted rom against the bootstrap
+compiler’s rom, and resolve any differences</p></li>
+</ol>
+</div>
+ </content>
+ <author>
+  <name>Sam Blenny</name>
+ </author>
+</entry>
+
+<entry>
+ <title>2022-07-02: Working towards self-hosting</title>
+ <link rel="alternate" type="text/html" href=""/>
+ <id>https://samblenny.github.io/markab-dev-journal/2022-07-02.html</id>
+ <published>2022-07-02T00:00Z</published>
+ <updated>2022-07-02T00:00Z</updated>
+ <rights>Copyright (c) 2022 Sam Blenny</rights>
+ <content type="xhtml">
+<div xmlns="http://www.w3.org/1999/xhtml">
+<h1>2022-07-02: Working towards self-hosting</h1>
+<h2 id="recap">Recap</h2>
+<p>In my last update, I had the Markab VM working for a hello world rom, and I
+was getting started with source code for the Markab kernel rom.</p>
+<h2 id="kernel-and-bootstrap-compiler-work">Kernel and bootstrap compiler work</h2>
+<p>Since last time, I wrote a bootstrap compiler in Python to transform Markab
+language source code for a kernel into a rom image that runs on the Markab VM.
+I haven’t quite figured out suitable terminology for talking about the kernel
+and the closely related compiler which lives in the same source file. I feel
+like I need to factor them apart, but I would first need to add support for
+searching multiple vocabularies. So, for now, the kernel and compiler are
+smushed together and I refer to them awkwardly.</p>
+<p>The kernel/compiler includes:</p>
+<ul>
+<li>Outer interpreter to parse text input and look up words in dictionary</li>
+<li>Inner interpreter to run words as direct-threaded code</li>
+<li><code>: ... ;</code> colon definitions to compile new words</li>
+<li>Tail call optimizer for saving code space and doing tail recursive loops</li>
+<li>Compiling conditional blocks with <code>if{ ... }if</code></li>
+<li>Compiling counted loops with <code>for{ ... }for</code></li>
+<li>Compiling of core words, constants, and variables</li>
+</ul>
+<p>Along the way, I also built several debugging features:</p>
+<ul>
+<li>Symbol table generation by bootstrap compiler</li>
+<li>Instruction tracing in the VM using the symbol table</li>
+<li>Memory range dumping</li>
+<li>A new error code printing mechanism</li>
+</ul>
+<p>Some other changes:</p>
+<ul>
+<li>Simpler memory map</li>
+<li>Several revisions to the VM instruction set to streamline common instruction
+sequences, such as for-loops</li>
+<li>New test fixture for compiling code in the VM (vs. with bootstrap compiler)</li>
+</ul>
+<h2 id="profiling-and-speed-improvements">Profiling and speed improvements</h2>
+<p>Once I got the kernel and compiler working well enough to write tests of code
+compiled in the VM, I wasn’t happy with the speed. The bootstrap compiler is
+very fast, but compiling just three test words in the VM initially took almost
+two seconds.</p>
+<p>Using Python’s <code>cProfile</code> profiler, I was able to eliminate or replace some
+slow function calls in the VM. Much of the time seems to be spent on dictionary
+lookups, so I tried to optimize hotspots in that code path. I got a big speed
+boost from re-writing my Markab code for string matching. I got a smaller but
+still noticeable boost from frequency-sorting the words in my core vocabulary.
+The current kernel rom tests run in about 600ms, down from about 1900ms before
+I started the optimizations.</p>
+<p>I expect that I can get a substantial additional speed boost by changing the
+dictionary data structure from a linked list to a hashmap. With that in mind, I
+made a little Python script to evaluate some string hashing functions. My core
+vocabulary currently has 163 entries. By my estimate, using a simple polynomial
+hash with 128, 64, or 32 buckets would reduce the worst case dictionary search
+list length for my current dictionary to 4, 7, or 12 items, respectively.</p>
+<p>For now, I am going to leave the dictionary data structure alone and focus on
+getting the kernel/compiler in good shape to do a self-hosted compile.</p>
+<h2 id="toward-self-hosted-compilation">Toward self-hosted compilation</h2>
+<p>To validate that my kernel and compiler are up to a useful level of
+functionality, I plan to do a self-hosted compile of the kernel. I’m working
+toward using the kernel compiler to compile another instance of itself from
+source into a rom image file.</p>
+<p>Some of the things I need to reach that goal include:</p>
+<ol type="1">
+<li><p>Convert the VM’s branch and jump instructions to use relative addressing.
+This will let me compile object code for the new kernel into a different
+address range relative to where it will eventually be loaded from the rom
+file. I’m currently part way through this conversion.</p></li>
+<li><p>Add some sort of file IO capability to the VM with suitable instruction
+opcodes and Markab core words to access it. I’m not sure yet how I want to
+do this. I definitely want some kind of sandboxing to prevent arbitrary
+filesystem access, but I’m not sure about the rest.</p></li>
+<li><p>Extend the kernel’s outer interpreter and compiling words to handle more
+than one active vocabulary. While compiling the new kernel vocabulary, I
+need to be able to use words from the current kernel’s vocabulary. But, the
+new kernel’s vocabulary cannot include any compiled dependencies on words
+from the current kernel’s vocabulary. I’m not sure yet how I want to do
+this.</p></li>
+<li><p>Add lots of tests</p></li>
+</ol>
+<h2 id="next-steps">Next steps</h2>
+<p>Once I get self-hosted compilation working and tested, I will probably convert
+the dictionary from linked list to hashmap. If compilation speed is too slow
+while I work toward self-hosting, I may do the hashmap thing sooner.</p>
+<p>Once self-hosting and the hashmap dictionary are done, I will probably add core
+words and VM opcodes for raster graphics and a pointing device. On the other
+hand, if compilation is still annoyingly slow after re-working the dictionary,
+I might instead start working on a faster VM in C or assembly.</p>
+</div>
+ </content>
+ <author>
+  <name>Sam Blenny</name>
+ </author>
+</entry>
+
+<entry>
+ <title>2022-06-21: Progress on Markab kernel</title>
+ <link rel="alternate" type="text/html" href=""/>
+ <id>https://samblenny.github.io/markab-dev-journal/2022-06-21.html</id>
+ <published>2022-06-21T00:00Z</published>
+ <updated>2022-06-21T00:00Z</updated>
+ <rights>Copyright (c) 2022 Sam Blenny</rights>
+ <content type="xhtml">
+<div xmlns="http://www.w3.org/1999/xhtml">
+<h1>2022-06-21: Progress on Markab kernel</h1>
+<h2 id="summary-of-recent-work">Summary of recent work</h2>
+<p>Things I did since my last update:</p>
+<ul>
+<li><p>Hand-assemble a hello-world rom (it works)</p></li>
+<li><p>Revise Markab VM opcodes and the corresponding Markab core vocab words, to
+make string processing loops more convenient. This includes instructions for
+using registers <code>A</code> and <code>B</code> to work with auto-incrementing addresses,
+registers <code>X</code> and <code>Y</code> to work with temporary values, and some looping stuff.</p></li>
+<li><p>Revise my emacs and vim syntax highlighting plugins to keep pace with the
+opcode and core vocab changes.</p></li>
+<li><p>Write a bunch of Markab language code for the Markab kernel and compiler.
+This is part of bootstrapping the kernel, so I can’t actually run or test any
+of this code yet.</p></li>
+</ul>
+<h2 id="markab-kernel">Markab kernel</h2>
+<p>For now, what I’m calling the kernel is perhaps a bit broader in scope than
+what is typically included in a traditional Forth kernel. I may end up
+refactoring some of this stuff out into libraries once I get it all up and
+running.</p>
+<p>What I have so far:</p>
+<ul>
+<li><p>Outer Interpreter words: <code>outer</code> <code>readline</code> <code>dowords</code> <code>word</code> <code>find</code> <code>number</code></p></li>
+<li><p>Defining words: <code>var</code> <code>const</code> <code>opcode</code> <code>create</code> <code>:</code> <code>;</code> <code>here</code> <code>allot</code> <code>,</code>
+<code>h,</code> <code>w,</code></p></li>
+<li><p>Branching words: <code>if{</code> <code>}if</code> <code>for{</code> <code>}for</code></p></li>
+<li><p>String and IO words: <code>hex</code> <code>decimal</code> <code>space</code> <code>cr</code> <code>strcmp</code> <code>."</code> <code>.dp</code></p></li>
+<li><p>Auto-generated words: constants for opcodes, constants for memory map areas,
+and opcode definitions for core words that map directly to a single VM opcode</p></li>
+</ul>
+<p>The main thing I lack is an inner interpreter to run the opcodes and threaded
+code from dictionary entries.</p>
+<h1 id="next-steps">Next steps</h1>
+<p>Once I finish implementing my first draft of the kernel, I need to compile it.
+I want to make Markab self-hosting, meaning that a rom of the Markab kernel
+should be able to load a compiler and re-compile itself from source code into a
+new rom.</p>
+<p>To start that chain of compilation, I need a bootstrap compiler. As far as I
+can tell, the traditional methods to bootstrap a new Fourth(-like) system are:</p>
+<ol type="1">
+<li><p>“Meta-compile” a new kernel using an existing Forth system</p></li>
+<li><p>Hand-assemble a new kernel from scratch (you become a human compiler)</p></li>
+</ol>
+<p>Both of those methods suffer from the problem of inscrutability for people who
+are not already Forth implementation experts. So far, the few references and
+examples I’ve encountered about bootstrapping a Forth(-like) system fall
+solidly into the category of “woah, this is super mysterious”. I would like
+Markab’s bootstrapping process to be legible and well documented so that people
+can understand it with a reasonable level of effort.</p>
+<p>With that in mind, I’m tentatively planning to write a bootstrap compiler in
+Python, then use the resulting rom to complete the self-hosting process by
+recompiling itself.</p>
+</div>
+ </content>
+ <author>
+  <name>Sam Blenny</name>
+ </author>
+</entry>
+
+<entry>
+ <title>2022-06-13: Thoughts on immediate words</title>
+ <link rel="alternate" type="text/html" href=""/>
+ <id>https://samblenny.github.io/markab-dev-journal/2022-06-13.html</id>
+ <published>2022-06-13T00:00Z</published>
+ <updated>2022-06-13T00:00Z</updated>
+ <rights>Copyright (c) 2022 Sam Blenny</rights>
+ <content type="xhtml">
+<div xmlns="http://www.w3.org/1999/xhtml">
+<h1>2022-06-13: Thoughts on immediate words</h1>
+<p>I’ve been thinking about immediate words as part of trying to define a good set
+of core words for Markab. The benefit of immediate words is that they make it
+possible for a simple compiler to provide high-level language features.</p>
+<p>Immediate words are one of Chuck Moore’s design innovations which are simple
+and extremely useful, yet also subtle and confusing. This is one of the areas
+in reading old Forth books where it has taken me a lot of effort to understand.
+Achieving the perspective to appreciate the simplicity is tricky. Understanding
+it well enough implement a compiler and define new immediate words is hard.</p>
+<p>The essential property of an immediate word is that, when included in the
+definition of a new word, it causes the compiler to run some of the immediate
+word’s code at compile time. The compile time code gets to use the stack and
+CPU to calculate and decide what should go into the dictionary entry that is
+being compiled. So, the immediate word’s compile time code gets to determine
+what the behavior of its runtime code should be.</p>
+<p>For example, this mechanism allows for conditional blocks where, at compile
+time while defining a word such as <code>: three? 3 = if{ do stuff }if ;</code>:</p>
+<ol type="1">
+<li><p><code>if{</code> compiles a jump instruction with a temporary address into the
+dictionary, then pushes a pointer to the that address onto the data stack</p></li>
+<li><p><code>}if</code> at the end of the conditional block calculates the correct jump
+address, pops the pointer to the temporary address (pushed by <code>if{</code>), then
+patches the temporary address with the correct calculated address.</p></li>
+</ol>
+<p>Many other things are possible using the immediate word mechanism. If you want
+the compiler to support some new control flow construct or data structure, you
+can define new immediate words to make that happen. You don’t have to change
+the language specification or the compiler.</p>
+</div>
+ </content>
+ <author>
+  <name>Sam Blenny</name>
+ </author>
+</entry>
+
+<entry>
+ <title>2022-06-12: Python VM is done-ish</title>
+ <link rel="alternate" type="text/html" href=""/>
+ <id>https://samblenny.github.io/markab-dev-journal/2022-06-12.html</id>
+ <published>2022-06-12T00:00Z</published>
+ <updated>2022-06-12T00:00Z</updated>
+ <rights>Copyright (c) 2022 Sam Blenny</rights>
+ <content type="xhtml">
+<div xmlns="http://www.w3.org/1999/xhtml">
+<h1>2022-06-12: Python VM is done-ish</h1>
+<p>I’ve been more in building mode than writing mode for the past week. Or,
+rather, the writing efforts have gone into code, README updates, and commit
+message mini-essays.</p>
+<p>Two main developments:</p>
+<ol type="1">
+<li><p>I’ve been building a virtual machine emulator in Python for a stack machine
+CPU with text console IO. The VM mostly works now with a fairly complete set
+of opcodes and moderately comprehensive tests. There are some things I
+intend to change and extend. But, for now, the VM is good enough to start
+working on a kernel and assembler. For the tests, I’ve been assembling by
+hand, including calculating addresses for jumps and branches.</p></li>
+<li><p>I’ve been contemplating how to articulate what Markab is about as a project,
+and who it’s intended for. Going forward, I plan to be more clear with
+communicating that Markab is an art project. I’m building a VM and a
+Forth-like language because I want those tools to help me make the work I
+want to make, as part of an art practice.</p>
+<p>Also, I’ve decided to abandon any pretense of attempting to follow
+traditional Forth naming conventions or standards. I will continue using
+system architecture design elements from the Forth tradition: data and
+return stacks, the dictionary, inner and outer interpreters, and so on. But,
+I will go my own way with naming of words. I plan to borrow math and logic
+operator naming from C. The rest is to be determined.</p></li>
+</ol>
+</div>
+ </content>
+ <author>
+  <name>Sam Blenny</name>
+ </author>
+</entry>
+
+</feed>

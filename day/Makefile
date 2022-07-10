@@ -6,7 +6,7 @@
 # This uses GNU make's wildcard extensions (not POSIX).
 #
 .SUFFIXES:             # Disable default old-school inference rules
-.PHONY: all 404 clean
+.PHONY: all 404 clean feed
 
 MD_FILES   = $(wildcard 20??-??-??*.md)
 HTML_FILES = $(MD_FILES:.md=.html)
@@ -17,10 +17,14 @@ PD_OPT = --wrap=preserve --strip-comments -s --toc
 
 
 # This will trigger the .md.html inference rule
-all: $(HTML_FILES)
+all: feed $(HTML_FILES)
 	@echo done
 
-# The sed line is a cludge to fix up the ../style.css and ../ links
+# Run a script to generate ../feed.atom using pandoc
+feed:
+	./feed.py
+
+# The sed line is a kludge to fix up the ../style.css and ../ links
 404: 404.html 404.md
 	sed -i 's/href="..\//href="\/markab-dev-journal\//g' 404.html
 	mv 404.html ../

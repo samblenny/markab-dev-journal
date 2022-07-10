@@ -9,7 +9,8 @@ require 'webrick'
 # Use correct mime type for .wasm files (ruby only added wasm type in v2.7)
 config = {DocumentRoot: Dir.pwd,
           MimeTypes: WEBrick::HTTPUtils::DefaultMimeTypes.merge({
-          "wasm" => "application/wasm", "md" => "text/markdown;charset=UTF-8"}),
+          "wasm" => "application/wasm", "md" => "text/markdown;charset=UTF-8",
+          "atom" => "application/atom+xml"}),
           Logger: WEBrick::Log.new(open(File::NULL, 'w')),
           AccessLog: [],
           DoNotReverseLookup: true,
