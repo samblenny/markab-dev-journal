@@ -17,7 +17,7 @@ N_MOST_RECENT = 10           # <- this many most recent entries get included
 def ts(year, month, day, hour=0, minute=0):
   """Generate RFC3339 timestamp with 'T' and 'Z' for the specified date"""
   t = datetime(year, month, day, hour, minute, tzinfo=timezone.utc)
-  return t.strftime("%Y-%m-%dT%H:%MZ")
+  return t.strftime("%Y-%m-%dT%H:%M:00Z")
 
 
 # Atom feed xml template

@@ -5,14 +5,14 @@
  <link href="https://samblenny.github.io/markab-dev-journal/" />
  <id>https://samblenny.github.io/markab-dev-journal/feed.atom</id>
  <author><name>Sam Blenny</name></author>
- <updated>2022-07-10T06:13Z</updated>
+ <updated>2022-07-10T06:20:00Z</updated>
 
 <entry>
  <title>2022-07-10: Starting an Atom feed</title>
  <link rel="alternate" type="text/html" href=""/>
  <id>https://samblenny.github.io/markab-dev-journal/2022-07-10.html</id>
- <published>2022-07-10T04:18Z</published>
- <updated>2022-07-10T04:18Z</updated>
+ <published>2022-07-10T04:18:00Z</published>
+ <updated>2022-07-10T04:18:00Z</updated>
  <rights>Copyright (c) 2022 Sam Blenny</rights>
  <content type="xhtml">
 <div xmlns="http://www.w3.org/1999/xhtml">
@@ -63,8 +63,8 @@ header.</p></li>
  <title>2022-07-08: Getting close to self-hosting</title>
  <link rel="alternate" type="text/html" href=""/>
  <id>https://samblenny.github.io/markab-dev-journal/2022-07-08.html</id>
- <published>2022-07-08T00:00Z</published>
- <updated>2022-07-08T00:00Z</updated>
+ <published>2022-07-08T00:00:00Z</published>
+ <updated>2022-07-08T00:00:00Z</updated>
  <rights>Copyright (c) 2022 Sam Blenny</rights>
  <content type="xhtml">
 <div xmlns="http://www.w3.org/1999/xhtml">
@@ -144,8 +144,8 @@ compiler’s rom, and resolve any differences</p></li>
  <title>2022-07-02: Working towards self-hosting</title>
  <link rel="alternate" type="text/html" href=""/>
  <id>https://samblenny.github.io/markab-dev-journal/2022-07-02.html</id>
- <published>2022-07-02T00:00Z</published>
- <updated>2022-07-02T00:00Z</updated>
+ <published>2022-07-02T00:00:00Z</published>
+ <updated>2022-07-02T00:00:00Z</updated>
  <rights>Copyright (c) 2022 Sam Blenny</rights>
  <content type="xhtml">
 <div xmlns="http://www.w3.org/1999/xhtml">
@@ -247,8 +247,8 @@ I might instead start working on a faster VM in C or assembly.</p>
  <title>2022-06-21: Progress on Markab kernel</title>
  <link rel="alternate" type="text/html" href=""/>
  <id>https://samblenny.github.io/markab-dev-journal/2022-06-21.html</id>
- <published>2022-06-21T00:00Z</published>
- <updated>2022-06-21T00:00Z</updated>
+ <published>2022-06-21T00:00:00Z</published>
+ <updated>2022-06-21T00:00:00Z</updated>
  <rights>Copyright (c) 2022 Sam Blenny</rights>
  <content type="xhtml">
 <div xmlns="http://www.w3.org/1999/xhtml">
@@ -315,8 +315,8 @@ recompiling itself.</p>
  <title>2022-06-13: Thoughts on immediate words</title>
  <link rel="alternate" type="text/html" href=""/>
  <id>https://samblenny.github.io/markab-dev-journal/2022-06-13.html</id>
- <published>2022-06-13T00:00Z</published>
- <updated>2022-06-13T00:00Z</updated>
+ <published>2022-06-13T00:00:00Z</published>
+ <updated>2022-06-13T00:00:00Z</updated>
  <rights>Copyright (c) 2022 Sam Blenny</rights>
  <content type="xhtml">
 <div xmlns="http://www.w3.org/1999/xhtml">
@@ -359,8 +359,8 @@ the language specification or the compiler.</p>
  <title>2022-06-12: Python VM is done-ish</title>
  <link rel="alternate" type="text/html" href=""/>
  <id>https://samblenny.github.io/markab-dev-journal/2022-06-12.html</id>
- <published>2022-06-12T00:00Z</published>
- <updated>2022-06-12T00:00Z</updated>
+ <published>2022-06-12T00:00:00Z</published>
+ <updated>2022-06-12T00:00:00Z</updated>
  <rights>Copyright (c) 2022 Sam Blenny</rights>
  <content type="xhtml">
 <div xmlns="http://www.w3.org/1999/xhtml">

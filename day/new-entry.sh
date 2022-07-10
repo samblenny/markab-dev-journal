@@ -10,7 +10,7 @@
 
 # Make a YYYY-MM-DD formatted date string
 DATE_PREFIX=`date -u "+%Y-%m-%d"`
-TIMESTAMP=`date -u "+%Y-%m-%dT%H:%MZ"`
+TIMESTAMP=`date -u "+%Y-%m-%dT%H:%M:00Z"`
 
 # Generate 3 candidate journal entry file names
 FILE_A=$DATE_PREFIX.md
