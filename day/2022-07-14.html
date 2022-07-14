@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!--
+Copyright (c) 2022 Sam Blenny
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dev Journal documenting work on Markab">
+<title>2022-07-14: Music with Markab + IRC + Pd</title>
+<link rel="preload" href="../style.css" as="style">
+<link href="../style.css" rel="stylesheet"></head><body>
+<header><a href="../">Markab Dev Journal</a></header>
+<main>
+<h1>2022-07-14: Music with Markab + IRC + Pd</h1>
+<hr><ul>
+<li><a href="#a-new-quest-begins">A new quest begins</a></li>
+<li><a href="#links">Links</a></li>
+</ul><hr>
+<h2 id="a-new-quest-begins">A new quest begins</h2>
+<p>A friend asked me the other day what I plan to do next with Markab. That
+question got me thinking and inspired what’s starting to look like a bit of a
+quest.</p>
+<p>I’ve decided I want to be able to write Markab code to build and operate synth
+patches in Pure Data (pd “vanilla”). Also, I want to be able to control that
+process with irc chat as the primary user interface. The idea is that training
+a band of silly robots to play music would probably be fun and also have a fair
+possibility of translating well to video.</p>
+<p>So far, I’ve written an irc bot to connect a Pure Data (pd “vanilla”) patch to a
+private irc channel that I’m hosting from a server on my desk.</p>
+<p>This is what it looks like using irc to send Pd messages with instructions to
+modify its patch with a tone generator (41KB png):</p>
+<p><img width="650" height="438" src="img/2022-07-14-irc.png"
+ alt="screenshot of an irc window with messages sent to Pd" /></p>
+<p>This is what the pd patch looks like (14KB png):</p>
+<p><img width="650" height="370" src="img/2022-07-14-pd.png"
+ alt="screenshot of Pd patch with network client and a tone generator" /></p>
+<h2 id="links">Links</h2>
+<p>These are links to the raw files (no js) related to pdbot.</p>
+<ul>
+<li><a href="https://raw.githubusercontent.com/samblenny/markab-lab/2022-07-14/pdbridge/pdbridge.py">pdbot irc bot</a>
+written in Python to bridge between irc and Pd’s network protocol.</li>
+<li><a href="https://raw.githubusercontent.com/samblenny/markab-lab/2022-07-14/pdbridge/net-rxtx.pd">Pd patch</a>
+that listens for a connection from pdbot.</li>
+<li><a href="https://raw.githubusercontent.com/samblenny/markab-lab/2022-07-14/pdbridge/join.sh">shell script</a>
+that I use with irssi to filter newlines out of a file of Pd messages so I can
+send them all at once without rate limiting by the irc server.</li>
+<li><a href="https://raw.githubusercontent.com/samblenny/markab-lab/2022-07-14/pdbridge/sub-canvas.txt">text file</a>
+with messages to tell Pd how to clear its subcanvas and then re-create its
+tone generator with a volume control receiver.</li>
+</ul>
+</main><footer>
+Copyright (c) 2022 Sam Blenny
+ — License: <a href="../LICENSE.txt">CC-BY-NC-SA-4.0</a>
+ — [<a href="../feed.atom">RSS/Atom</a>]
+</footer></body></html>
