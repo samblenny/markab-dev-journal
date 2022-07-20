@@ -5,7 +5,126 @@
  <link href="https://samblenny.github.io/markab-dev-journal/" />
  <id>https://samblenny.github.io/markab-dev-journal/feed.atom</id>
  <author><name>Sam Blenny</name></author>
- <updated>2022-07-14T11:08:00Z</updated>
+ <updated>2022-07-20T21:35:00Z</updated>
+
+<entry>
+ <title>2022-07-20: Generating Pd messages in Markab</title>
+ <link rel="alternate" type="text/html" href=""/>
+ <id>https://samblenny.github.io/markab-dev-journal/2022-07-20.html</id>
+ <published>2022-07-20T19:13:00Z</published>
+ <updated>2022-07-20T19:13:00Z</updated>
+ <rights>Copyright (c) 2022 Sam Blenny</rights>
+ <content type="xhtml">
+<div xmlns="http://www.w3.org/1999/xhtml">
+<h1>2022-07-20: Generating Pd messages in Markab</h1>
+<h2 id="big-picture-better-pd-patching-workflow">Big picture: better Pd patching workflow</h2>
+<p>My current sub-quest with Markab is aimed at having a better way to experiment
+with patches in Pd. When I write code, I have tools that make it convenient to
+experiment with significant design changes and keep track of how projects
+evolve over time. I would like to have a similar level of convenience for
+working with Pd patches and song sequencing.</p>
+<p>For easy design revisions to source code, my key technology is using plain-text
+source code combined with git version control. With git, I can review what
+changed when, or easily go back to a previous revision if an experiment doesn’t
+go well. I would like to have that same experience with Pd patches, but I also
+want a way of creating patches by working at a higher level of abstraction than
+what Pd’s graphical user interface allows.</p>
+<p>In my experience, writing code at a high level of abstraction to generate other
+code at a lower level of abstraction tends to work well for making things that
+are efficient and flexible. In game dev, sometimes people talk about this sort
+of thing using the term “data driven design”.</p>
+<p>In this approach, you build a workflow to transform high-level abstractions
+into code or data in the low-level format needed by some other tool: maybe a
+game engine, Pd, a web browser, or whatever. The idea is that if you arrange
+the data well ahead of time, your code does not need to do so much work at
+runtime. So, it can be simpler and more efficient while still accomplishing
+complex tasks.</p>
+<p>In that context, I want a way to express Pd patches as high-level abstractions
+written plain-text source code. Beyond that, I want to use Markab to generate
+revisions to Pd patches interactively, in real time. That’s what I’m working
+toward.</p>
+<h2 id="mkbot-markab-gets-irc-powers">Mkbot: Markab gets irc powers</h2>
+<p>In my last post, I wrote about pdbot for sending messages to Pd over irc. Since
+then, I also wrote mkbot which lets me chat with a Markab VM.</p>
+<p>I’ve also been iterating on the Markab VM and kernel to make the experience of
+talking to mkbot more smooth and conversational, relatively speaking. My main
+focus has been to make things more concise, including a lot of work on error
+handling. My aim is to have mkbot’s replies fit in one (or a small number) of
+lines.</p>
+<p>Some of this past weeks changes include:</p>
+<ol type="1">
+<li><p>Loading of files, like: <code>load" kernel.mkb"</code></p></li>
+<li><p>Compiling and printing of string literals, like: <code>" Hello!" print cr</code></p></li>
+<li><p>Lots of work on error handling, including filename and line number for
+errors during the loading of a file</p></li>
+<li><p>Performance optimizations: the current load time for the Markab kernel to
+compile its own source code is down to 4.5 seconds on a slow Intel Atom CPU.
+I’m pretty happy with that.</p></li>
+</ol>
+<h2 id="chatlog-with-mkbot">Chatlog with mkbot</h2>
+<p>Here’s an example of loading some utility words from my standard library,
+checking memory usage, compiling the kernel, then checking memory again:</p>
+<pre><code>20:46:38 &lt;@sam&gt; &quot; Hello, world!&quot; print cr
+20:46:38 -mkbot- Hello, world!
+20:46:38 -mkbot-   OK
+20:46:54 &lt;@sam&gt; load&quot; stdlib.mkb&quot;
+20:46:54 -mkbot- OK
+20:46:59 &lt;@sam&gt; free
+20:46:59 -mkbot- 4 KB used  93% free  OK
+20:47:06 &lt;@sam&gt; load&quot; kernel.mkb&quot;
+20:47:10 -mkbot- OK
+20:47:14 &lt;@sam&gt; free
+20:47:14 -mkbot- 7 KB used  86% free  OK</code></pre>
+<p>I also wrote
+<a href="https://raw.githubusercontent.com/samblenny/markab-lab/2022-07-20/pdbridge/tonegen.mkb">tonegen.mkb</a>,
+a 988 byte Markab program to generate the Pd messages for the tone generator
+from my last post. I won’t post all of that here, but the key bit is listed
+below. The thing I want to point out is about workflow. The way I did this was
+to edit <code>tonegen.mkb</code> in emacs in one <code>tmux</code> pane, then ask mkbot in another
+pane to load and run the <code>tonegen.mkb</code> file from <code>irssi</code>.</p>
+<p>In the irc log, that process looks like this:</p>
+<pre><code>20:58:55 &lt;@sam&gt; load&quot; tonegen.mkb&quot;
+20:58:55 -mkbot- OK
+20:58:58 &lt;@sam&gt; go
+20:58:58 -mkbot- clear; pd dsp 1;
+20:58:58 -mkbot- obj 10 10 osc~ 440;   obj 35 40 receive vol;
+20:58:58 -mkbot- obj 10 70 *~ 0;   connect 0 0 2 0;   connect 1 0 2 1;
+20:58:58 -mkbot- obj 10 100 dac~;   connect 2 0 3 0;   connect 2 0 3 1;
+20:58:58 -mkbot- obj 10 150 receive subsend;
+20:58:58 -mkbot- obj 10 180 route vol;   connect 4 0 5 0;
+20:58:59 -mkbot- msg 10 210 \$1 100;   connect 5 0 6 0;
+20:58:59 -mkbot- obj 10 240 line 0 5;   connect 6 0 7 0;
+20:58:59 -mkbot- obj 10 270 send vol;   connect 7 0 8 0;
+20:59:00 -mkbot- send vol 0.3;
+20:59:00 -mkbot-   OK</code></pre>
+<p><code>go</code> is the name of a word I wrote to generate text for the messages to Pd,
+which mkbot evaluated for me and sent the results of in their reply.</p>
+<p>The code for <code>go</code> in the tonegen source code looks like this:</p>
+<pre><code>: go
+  &quot; clear; pd dsp 1;  &quot; print cr
+  &quot; osc~ 440&quot; obj  col+ &quot; vol&quot; rx col-  cr
+  &quot; *~ 0&quot; obj  0 0 1 conn  connR  cr
+  &quot; dac~&quot; obj  connL  connR  cr   row @ 2 + row  !
+  &quot; subsend&quot;   rx   cr
+  &quot; route vol&quot; obj  connL  cr
+  &quot; \$1 100&quot;   msg  connL  cr
+  &quot; line 0 5&quot;  obj  connL  cr
+  &quot; send vol&quot;  obj  connL  cr
+  &quot; send vol 0.3;&quot; print cr
+;</code></pre>
+<p>What I hope you’ll see is that, in the source code for my <code>go</code> word, mkbot is
+helping me keep track of numbers to use as X and Y coordinates for boxes and as
+inlet/outlet numbers for the <code>connect _ _ _ _;</code> messages to place wires.</p>
+<p>Letting mkbot calculate the numbers to translate from <code>connL</code> to whatever
+numbers Pd needs to see to accomplish the equivalent of, “connect the leftmost
+outlet of the previous box to the leftmost inlet of the most recently added
+box”, is much easier than calculating it by myself.</p>
+</div>
+ </content>
+ <author>
+  <name>Sam Blenny</name>
+ </author>
+</entry>
 
 <entry>
  <title>2022-07-14: Music with Markab + IRC + Pd</title>
